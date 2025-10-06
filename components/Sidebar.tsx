@@ -89,11 +89,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isL
 
   return (
     <nav className="hidden md:flex fixed top-0 left-0 h-full bg-slate-900/70 backdrop-blur-lg flex-col w-64 z-50 border-r border-slate-700/50">
-      <div aria-label="Asisten Belajar Mahasiswa Universitas Terbuka Home" className="px-6 pt-12 pb-8">
+      <div aria-label="Asisten Belajar Mahasiswa Universitas Terbuka Home" className="px-6 pt-12 pb-8 flex-shrink-0">
         <h1 className="text-xl font-semibold text-white font-display leading-tight">Asisten Belajar Mahasiswa</h1>
         <p className="text-base text-slate-300">Universitas Terbuka</p>
       </div>
-      <div className="flex flex-col space-y-2 px-4">
+      <div className="flex-1 flex flex-col space-y-2 px-4 overflow-y-auto pb-12">
         {menuItems.map(item => (
           <NavLink key={item.view} {...item} activeView={activeView} setActiveView={setActiveView} isLocked={isLocked}>
             {item.icon}
