@@ -11,26 +11,25 @@ interface InviteCodeDetails {
 const usedCodesStore = new Map<string, Map<string, number>>();
 
 /**
- * Parses the invite codes from the environment variable and applies requested modifications.
+ * Parses invite codes from the `INVITE_CODES_JSON` environment variable.
+ * This variable should be set in your deployment environment (e.g., Vercel dashboard).
+ * The format is a JSON array of objects, for example:
+ * [{"code": "UTMAJU", "durationMinutes": 15}, {"code": "UTCOBA", "durationMinutes": 7}]
  * @returns {InviteCodeDetails[]} An array of invite code details.
  */
 function getInviteCodes(): InviteCodeDetails[] {
     const codesJson = process.env.INVITE_CODES_JSON;
-    let baseCodes: InviteCodeDetails[] = [];
-    if (codesJson) {
-        try {
-            baseCodes = JSON.parse(codesJson);
-        } catch (error) {
-            console.error("Failed to parse INVITE_CODES_JSON:", error);
-        }
+    if (!codesJson) {
+        console.warn("INVITE_CODES_JSON environment variable is not set.");
+        return [];
     }
     
-    // Simulate user request: remove RS110294, add ADMOR94 if they don't exist
-    const filteredCodes = baseCodes.filter(c => c.code !== 'RS110294');
-    if (!filteredCodes.some(c => c.code === 'ADMOR94')) {
-        filteredCodes.push({ code: 'ADMOR94', durationMinutes: 90 });
+    try {
+        return JSON.parse(codesJson);
+    } catch (error) {
+        console.error("Failed to parse INVITE_CODES_JSON:", error);
+        return [];
     }
-    return filteredCodes;
 }
 
 /**
@@ -51,19 +50,19 @@ export default async function handler(request: Request): Promise<Response> {
         if (!inputCode || !userId) {
             return new Response(JSON.stringify({ status: 'invalid', error: 'Code and userId are required.' }), { status: 400 });
         }
+        
+        // Developer code is a special case, always valid and unlimited.
+        if (inputCode === 'RADINALLSHARE') {
+             return new Response(JSON.stringify({
+                status: 'valid',
+                durationMs: -1,
+            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
 
         const codeDetails = ALL_CODES.find(c => c.code === inputCode);
         
         if (!codeDetails) {
             return new Response(JSON.stringify({ status: 'invalid', error: 'Kode invite tidak valid.' }), { status: 404 });
-        }
-        
-        // Developer code is always valid and unlimited, bypassing daily checks
-        if (codeDetails.code === 'RADINALLSHARE') {
-             return new Response(JSON.stringify({
-                status: 'valid',
-                durationMs: -1,
-            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
         const codeUserTimestamps = usedCodesStore.get(inputCode);

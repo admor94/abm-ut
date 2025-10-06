@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { AppView, StudentData, ChatMessage, LearningHistoryEntry } from './types';
+import { v4 as uuidv4 } from 'uuid';
+import type { AppView, StudentData, ChatMessage, LearningHistoryEntry, PersonalFolder } from './types';
 import { HUB_PAGES_DATA } from './constants';
 import { Sidebar } from './components/Sidebar';
 import { Footer } from './components/Footer';
@@ -40,6 +41,7 @@ import { initializeAi } from './services/geminiService';
 import { ApiIntegrationPage } from './pages/ApiIntegrationPage';
 import { ResetAppPage } from './pages/ResetAppPage';
 import { CourseFolderPage } from './pages/CourseFolderPage';
+import { PersonalFolderPage } from './pages/PersonalFolderPage';
 import { AsistenBmpPage } from './pages/AsistenBmpPage';
 import { PrediksiNilaiPage } from './pages/PrediksiNilaiPage';
 import { GroupStudyWorkspacePage } from './pages/GroupStudyWorkspacePage';
@@ -126,6 +128,7 @@ const App: React.FC = () => {
     const [studentData, setStudentData] = useState<StudentData | null>(null);
     const [activeView, setActiveView] = useState<AppView>('Dashboard');
     const [learningHistory, setLearningHistory] = useState<LearningHistoryEntry[]>([]);
+    const [personalFolders, setPersonalFolders] = useState<PersonalFolder[]>([]);
     const [studyEndTime, setStudyEndTime] = useState<number | null>(null);
     const [sessionToContinue, setSessionToContinue] = useState<LearningHistoryEntry | null>(null);
     const [sessionExpiry, setSessionExpiry] = useState<number | null>(null);
@@ -188,6 +191,10 @@ const App: React.FC = () => {
                  if (savedHistory) {
                     setLearningHistory(JSON.parse(savedHistory));
                 }
+                const savedFolders = localStorage.getItem('personalFolders');
+                if (savedFolders) {
+                    setPersonalFolders(JSON.parse(savedFolders));
+                }
             }
             
             if (savedStudentData) {
@@ -238,11 +245,12 @@ const App: React.FC = () => {
             // Only save history if in apiKey mode or dev mode
             if(loginMethod === 'apiKey' || (loginMethod === 'invite' && usedInviteCode === 'RADINALLSHARE')) {
                 localStorage.setItem('learningHistory', JSON.stringify(learningHistory));
+                localStorage.setItem('personalFolders', JSON.stringify(personalFolders));
             }
         } catch (error) {
-            console.error("Failed to save learning history to localStorage", error);
+            console.error("Failed to save learning history/folders to localStorage", error);
         }
-    }, [learningHistory, loginMethod, usedInviteCode]);
+    }, [learningHistory, personalFolders, loginMethod, usedInviteCode]);
 
     useEffect(() => { window.scrollTo(0, 0); }, [activeView]);
 
@@ -343,22 +351,28 @@ const App: React.FC = () => {
 
     const addLearningHistory = useCallback((conversation: ChatMessage[], view: AppView, topic: string, systemPrompt: string, courseName?: string) => {
         if (conversation.length === 0) return;
+
+        // Check if an entry with a similar ID already exists to get its folderId
+        const potentialId = `${new Date().toISOString()}-${topic}`;
+        const existingEntry = learningHistory.find(e => e.id.endsWith(topic));
+
         const newEntry: LearningHistoryEntry = {
-            id: `${new Date().toISOString()}-${topic}`,
+            id: potentialId,
             view, topic,
             date: new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' }),
             conversation, systemPrompt, courseName,
+            folderId: existingEntry?.folderId, // Preserve folderId on update
         };
         setLearningHistory(prev => {
-            const existingIndex = prev.findIndex(e => e.id === newEntry.id);
+            const existingIndex = prev.findIndex(e => e.id === newEntry.id || e.topic === newEntry.topic && e.view === newEntry.view);
             if (existingIndex !== -1) {
                 const updatedHistory = [...prev];
-                updatedHistory[existingIndex] = newEntry;
+                updatedHistory[existingIndex] = { ...updatedHistory[existingIndex], ...newEntry };
                 return updatedHistory;
             }
             return [newEntry, ...prev];
         });
-    }, []);
+    }, [learningHistory]);
     
     const deleteHistoryEntry = useCallback((id: string) => {
         setLearningHistory(prev => prev.filter(entry => entry.id !== id));
@@ -368,6 +382,30 @@ const App: React.FC = () => {
         setSessionToContinue(entry);
         setActiveView(entry.view);
     };
+    
+    const handleAddFolder = (name: string) => {
+        if (name.trim() === '') return;
+        const newFolder: PersonalFolder = { id: uuidv4(), name: name.trim() };
+        setPersonalFolders(prev => [...prev, newFolder].sort((a, b) => a.name.localeCompare(b.name)));
+    };
+
+    const handleDeleteFolder = (id: string) => {
+        if (window.confirm("Menghapus folder ini juga akan mengeluarkan semua riwayat di dalamnya. Lanjutkan?")) {
+            setPersonalFolders(prev => prev.filter(f => f.id !== id));
+            // Also remove folderId from any history items
+            setLearningHistory(prev => prev.map(h => h.folderId === id ? { ...h, folderId: undefined } : h));
+        }
+    };
+
+    const handleAssignHistoryToFolder = (historyId: string, folderId: string | null) => {
+        setLearningHistory(prev => prev.map(h => {
+            if (h.id === historyId) {
+                return { ...h, folderId: folderId ?? undefined };
+            }
+            return h;
+        }));
+    };
+
 
     if (isLoading) {
         return <div className="min-h-screen w-full flex items-center justify-center bg-slate-900 text-white">Memuat Aplikasi...</div>;
@@ -393,7 +431,7 @@ const App: React.FC = () => {
         }
         
         const isProFeature = PRO_FEATURES.includes(activeView);
-        const isTrialExpired = loginMethod === 'invite' && usedInviteCode !== 'ADMOR94' && usedInviteCode !== 'RADINALLSHARE' && sessionExpiry != null && Date.now() >= sessionExpiry;
+        const isTrialExpired = loginMethod === 'invite' && usedInviteCode !== 'RADINALLSHARE' && sessionExpiry != null && Date.now() >= sessionExpiry;
 
         if (isProFeature && isTrialExpired) {
             return <FeatureLockPrompt setActiveView={setActiveView} />;
@@ -465,11 +503,13 @@ const App: React.FC = () => {
             case 'Panduan Lengkap UT':
                 return <PanduanUtPage setActiveView={setActiveView} />;
             case 'Riwayat Belajar Mahasiswa':
-                 return <LearningHistory history={learningHistory} setActiveView={setActiveView} studentData={studentData} onDelete={deleteHistoryEntry} onContinue={handleContinueSession} />;
+                 return <LearningHistory history={learningHistory} setActiveView={setActiveView} studentData={studentData} onDelete={deleteHistoryEntry} onContinue={handleContinueSession} folders={personalFolders} onAssignHistoryToFolder={handleAssignHistoryToFolder} />;
             case 'Lacak Pengingat':
                 return <ReminderTrackerPage setActiveView={setActiveView} />;
             case 'Folder Mata Kuliah':
-                 return <CourseFolderPage history={learningHistory} studentData={studentData} setActiveView={setActiveView} onContinue={handleContinueSession} onDelete={deleteHistoryEntry} />;
+                 return <CourseFolderPage history={learningHistory} studentData={studentData} setActiveView={setActiveView} onContinue={handleContinueSession} onDelete={deleteHistoryEntry} folders={personalFolders} onAssignHistoryToFolder={handleAssignHistoryToFolder} />;
+            case 'Folder Pribadi':
+                return <PersonalFolderPage folders={personalFolders} history={learningHistory} studentData={studentData!} onAddFolder={handleAddFolder} onDeleteFolder={handleDeleteFolder} onAssignHistoryToFolder={handleAssignHistoryToFolder} setActiveView={setActiveView} onContinue={handleContinueSession} onDeleteHistory={deleteHistoryEntry} />;
             case 'FAQ':
                 return <FaqPage setActiveView={setActiveView} studentData={studentData} />;
             case 'Integrasi API':
@@ -531,8 +571,8 @@ const App: React.FC = () => {
                     </div>
                     <Footer />
                 </main>
-                {loginMethod === 'invite' && (sessionExpiry || sessionResetTimestamp) && usedInviteCode && usedInviteCode !== 'ADMOR94' && usedInviteCode !== 'RADINALLSHARE' && (
-                    <SessionTimerBar expiryTimestamp={sessionExpiry} resetTimestamp={sessionResetTimestamp} inviteCode={usedInviteCode} />
+                {loginMethod === 'invite' && (sessionExpiry || sessionResetTimestamp) && (
+                    <SessionTimerBar expiryTimestamp={sessionExpiry} resetTimestamp={sessionResetTimestamp} inviteCode={usedInviteCode!} />
                 )}
                 <BottomNav 
                     activeView={activeView}

@@ -26,6 +26,12 @@ export interface LearningHistoryEntry {
   conversation: ChatMessage[];
   systemPrompt: string;
   courseName?: string;
+  folderId?: string;
+}
+
+export interface PersonalFolder {
+  id: string;
+  name: string;
 }
 
 export interface DeadlineTask {
@@ -164,6 +170,7 @@ export type AppView =
   | 'Riwayat Belajar Mahasiswa'
   | 'Lacak Pengingat'
   | 'Folder Mata Kuliah'
+  | 'Folder Pribadi'
   | 'FAQ'
   | 'Integrasi API'
   | 'Panduan Integrasi API'

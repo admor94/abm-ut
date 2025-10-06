@@ -132,6 +132,7 @@ export const HUB_PAGES_DATA: Record<string, HubPageData> = {
         { title: 'Riwayat Belajar Mahasiswa', description: 'Lihat kembali semua sesi interaksi Anda dengan ABM-UT.', targetView: 'Riwayat Belajar Mahasiswa' },
         { title: 'Lacak Pengingat', description: 'Lihat, kelola, dan hapus semua pengingat tenggat waktu yang pernah Anda buat.', targetView: 'Lacak Pengingat' },
         { title: 'Folder Mata Kuliah', description: 'Kelompokkan dan lihat riwayat belajar Anda berdasarkan mata kuliah tertentu.', targetView: 'Folder Mata Kuliah' },
+        { title: 'Folder Pribadi', description: 'Buat folder kustom untuk mengorganisir riwayat belajar Anda.', targetView: 'Folder Pribadi' },
       ]
     }]
   },

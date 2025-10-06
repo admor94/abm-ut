@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { jsPDF } from 'jspdf';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import type { LearningHistoryEntry, AppView, StudentData } from '../types';
+import type { LearningHistoryEntry, AppView, StudentData, PersonalFolder } from '../types';
 import { PageHeader } from '../components/PageHeader';
 import { PARENT_VIEW_MAP } from '../constants';
 
@@ -12,6 +12,8 @@ interface LearningHistoryProps {
   setActiveView: (view: AppView) => void;
   onDelete: (id: string) => void;
   onContinue: (entry: LearningHistoryEntry) => void;
+  folders: PersonalFolder[];
+  onAssignHistoryToFolder: (historyId: string, folderId: string | null) => void;
 }
 
 const handleDownload = async (entry: LearningHistoryEntry, format: 'pdf' | 'word', studentData: StudentData) => {
@@ -70,19 +72,54 @@ const handleDownload = async (entry: LearningHistoryEntry, format: 'pdf' | 'word
     }
 };
 
-const EntryActions: React.FC<{ entry: LearningHistoryEntry; studentData: StudentData; onContinue: () => void; onDelete: () => void }> = ({ entry, studentData, onContinue, onDelete }) => {
+const EntryActions: React.FC<{ 
+    entry: LearningHistoryEntry; 
+    studentData: StudentData; 
+    onContinue: () => void; 
+    onDelete: () => void;
+    folders: PersonalFolder[];
+    onAssignHistoryToFolder: (historyId: string, folderId: string | null) => void;
+}> = ({ entry, studentData, onContinue, onDelete, folders, onAssignHistoryToFolder }) => {
     const [showDownload, setShowDownload] = useState(false);
+    const [showMove, setShowMove] = useState(false);
+
+    const handleMove = (folderId: string | null) => {
+        onAssignHistoryToFolder(entry.id, folderId);
+        setShowMove(false);
+    };
+    
     return (
         <div className="flex items-center gap-2 relative">
             <button onClick={onContinue} className="px-3 py-1.5 bg-ut-blue text-white text-xs font-semibold rounded-md hover:bg-ut-blue-light transition-colors font-display">Lanjutkan</button>
             
-            <button onClick={() => setShowDownload(s => !s)} className="px-3 py-1.5 bg-gray-600 text-white text-xs font-semibold rounded-md hover:bg-gray-500 transition-colors font-display">Unduh</button>
-            {showDownload && (
-                <div className="absolute top-full right-0 mt-2 w-28 bg-gray-700 rounded-md shadow-lg z-10 p-1">
-                    <button onClick={() => { handleDownload(entry, 'pdf', studentData); setShowDownload(false); }} className="block w-full text-left px-3 py-1.5 text-xs text-white hover:bg-ut-blue-light rounded-sm">PDF</button>
-                    <button onClick={() => { handleDownload(entry, 'word', studentData); setShowDownload(false); }} className="block w-full text-left px-3 py-1.5 text-xs text-white hover:bg-ut-blue-light rounded-sm">Word</button>
-                </div>
-            )}
+            <div className="relative">
+                <button onClick={() => setShowMove(s => !s)} className="px-3 py-1.5 bg-slate-600 text-white text-xs font-semibold rounded-md hover:bg-slate-500 transition-colors font-display">Folder</button>
+                {showMove && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-slate-700 rounded-md shadow-lg z-10 p-1">
+                        <p className="px-3 py-1.5 text-xs text-slate-400">Pindahkan ke:</p>
+                        {folders.map(folder => (
+                            <button key={folder.id} onClick={() => handleMove(folder.id)} className="block w-full text-left px-3 py-1.5 text-xs text-white hover:bg-ut-blue-light rounded-sm">{folder.name}</button>
+                        ))}
+                        {entry.folderId && (
+                            <>
+                                <div className="h-px bg-slate-600 my-1"></div>
+                                <button onClick={() => handleMove(null)} className="block w-full text-left px-3 py-1.5 text-xs text-ut-yellow hover:bg-yellow-500 rounded-sm">Keluarkan dari Folder</button>
+                            </>
+                        )}
+                         {folders.length === 0 && <p className="px-3 py-1.5 text-xs text-slate-400 italic">Belum ada folder</p>}
+                    </div>
+                )}
+            </div>
+
+            <div className="relative">
+                <button onClick={() => setShowDownload(s => !s)} className="px-3 py-1.5 bg-gray-600 text-white text-xs font-semibold rounded-md hover:bg-gray-500 transition-colors font-display">Unduh</button>
+                {showDownload && (
+                    <div className="absolute top-full right-0 mt-2 w-28 bg-gray-700 rounded-md shadow-lg z-10 p-1">
+                        <button onClick={() => { handleDownload(entry, 'pdf', studentData); setShowDownload(false); }} className="block w-full text-left px-3 py-1.5 text-xs text-white hover:bg-ut-blue-light rounded-sm">PDF</button>
+                        <button onClick={() => { handleDownload(entry, 'word', studentData); setShowDownload(false); }} className="block w-full text-left px-3 py-1.5 text-xs text-white hover:bg-ut-blue-light rounded-sm">Word</button>
+                    </div>
+                )}
+            </div>
             
             <button onClick={onDelete} className="p-2 bg-gray-600 text-white rounded-md hover:bg-ut-red transition-colors" aria-label="Hapus">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -92,7 +129,7 @@ const EntryActions: React.FC<{ entry: LearningHistoryEntry; studentData: Student
 };
 
 
-export const LearningHistory: React.FC<LearningHistoryProps> = ({ history, studentData, setActiveView, onDelete, onContinue }) => {
+export const LearningHistory: React.FC<LearningHistoryProps> = ({ history, studentData, setActiveView, onDelete, onContinue, folders, onAssignHistoryToFolder }) => {
   const parentView = PARENT_VIEW_MAP['Riwayat Belajar Mahasiswa'];
 
   const handleDelete = (id: string) => {
@@ -128,9 +165,10 @@ export const LearningHistory: React.FC<LearningHistoryProps> = ({ history, stude
                           <p className="text-sm text-ut-blue-light font-semibold font-display">{entry.view}</p>
                           <h3 className="font-semibold text-lg text-white font-display truncate" title={entry.topic}>{entry.topic}</h3>
                           <p className="text-xs text-slate-400 mt-1">{entry.date}</p>
+                          {entry.folderId && <p className="text-xs text-ut-yellow mt-1">Di folder: {folders.find(f => f.id === entry.folderId)?.name || 'Tidak Dikenal'}</p>}
                         </div>
                         <div className="flex-shrink-0 ml-4">
-                            {studentData && <EntryActions entry={entry} studentData={studentData} onContinue={() => onContinue(entry)} onDelete={() => handleDelete(entry.id)} />}
+                            {studentData && <EntryActions entry={entry} studentData={studentData} onContinue={() => onContinue(entry)} onDelete={() => handleDelete(entry.id)} folders={folders} onAssignHistoryToFolder={onAssignHistoryToFolder} />}
                         </div>
                       </div>
                     </div>

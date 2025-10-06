@@ -94,7 +94,6 @@ const AgendaTicker: React.FC = () => {
                     className="ticker-move" 
                     style={{ 
                         animationDuration: `${animationDuration}s`,
-                        animationTimingFunction: `steps(${tickerItems.length}, end)`
                     }}
                 >
                     {tickerItems.map((item, index) => (
