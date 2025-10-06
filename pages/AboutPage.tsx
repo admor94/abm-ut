@@ -58,7 +58,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ setActiveView }) => {
                     </p>
                 </div>
                 <div>
-                    <h3 className="text-ut-blue-light not-prose">Untuk Siapa Aplikasi Ini?</h4>
+                    <h3 className="text-ut-blue-light not-prose">Untuk Siapa Aplikasi Ini?</h3>
                     <p>Aplikasi ini dirancang secara eksklusif untuk mahasiswa Universitas Terbuka di semua fakultas dan program studi. Kami berkomitmen untuk mendukung model pembelajaran jarak jauh yang fleksibel dengan menyediakan mitra belajar virtual yang selalu siap sedia.</p>
                 </div>
                 <div>
