@@ -8,47 +8,58 @@ interface LoginPageProps {
   onShowInfo: () => void;
 }
 
-// Client-side validation function to replace server call
+// Client-side validation to handle re-logins and cooldowns without a server call.
 const validateInviteCode = async (code: string, userId: string): Promise<{ status: 'valid' | 'reused' | 'invalid', durationMs?: number, resetTimestamp?: number, error?: string }> => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Simulate network delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Special developer code
-    if (code === 'RADINALLSHARE') {
-        return { status: 'valid', durationMs: -1 };
+    // --- LOGIC FOR RE-LOGGING INTO AN ACTIVE SESSION ---
+    // This allows users to log out and log back in without losing time.
+    const lastExpiryRaw = localStorage.getItem('sessionExpiry');
+    const lastCode = localStorage.getItem('usedInviteCode');
+    if (lastCode && lastCode === code.toUpperCase() && lastExpiryRaw) {
+        const lastExpiry = parseInt(lastExpiryRaw, 10);
+        if (lastExpiry > Date.now()) {
+            // Found an active, unexpired session for this code. Allow re-login.
+            return { status: 'valid', durationMs: lastExpiry - Date.now() };
+        }
     }
 
-    const codeDetails = INVITE_CODES.find(c => c.code === code);
+    // Special case for developer/unlimited codes
+    const codeDetails = INVITE_CODES.find(c => c.code === code.toUpperCase());
+    if (codeDetails && codeDetails.durationMinutes === -1) {
+        return { status: 'valid', durationMs: -1 };
+    }
+    
     if (!codeDetails) {
         return { status: 'invalid', error: 'Kode invite tidak valid atau sudah digunakan.' };
     }
 
+    // --- LOGIC FOR FRESH LOGINS & COOLDOWNS ---
     const oneDayInMs = 24 * 60 * 60 * 1000;
     try {
         const usedCodesRaw = localStorage.getItem('abmut_used_codes');
         const usedCodes = usedCodesRaw ? JSON.parse(usedCodesRaw) : {};
         
-        const lastUsedTimestamp = usedCodes[code]?.[userId];
+        const lastUsedTimestamp = usedCodes[code.toUpperCase()]?.[userId];
 
         if (lastUsedTimestamp && (Date.now() - lastUsedTimestamp < oneDayInMs)) {
-            // Reused within 24 hours
+            // Code has been used by this user within the last 24 hours.
             return {
                 status: 'reused',
                 resetTimestamp: lastUsedTimestamp + oneDayInMs
             };
         }
 
-        // Fresh use or cooldown expired
-        if (!usedCodes[code]) {
-            usedCodes[code] = {};
+        // It's a fresh use or the 24-hour cooldown has expired.
+        if (!usedCodes[code.toUpperCase()]) {
+            usedCodes[code.toUpperCase()] = {};
         }
-        usedCodes[code][userId] = Date.now();
+        usedCodes[code.toUpperCase()][userId] = Date.now();
         localStorage.setItem('abmut_used_codes', JSON.stringify(usedCodes));
         
-        const GRACE_PERIOD_MS = 2 * 60 * 1000; // 2 minutes grace period
-        const durationMs = codeDetails.durationMinutes === -1 
-            ? -1 
-            : (codeDetails.durationMinutes * 60 * 1000) + GRACE_PERIOD_MS;
+        const GRACE_PERIOD_MS = 2 * 60 * 1000; // 2 minutes grace period for UX
+        const durationMs = (codeDetails.durationMinutes * 60 * 1000) + GRACE_PERIOD_MS;
 
         return {
             status: 'valid',
@@ -57,7 +68,6 @@ const validateInviteCode = async (code: string, userId: string): Promise<{ statu
 
     } catch (e) {
         console.error("Error processing used codes from localStorage", e);
-        // This is a developer-facing error, user gets a generic message.
         return { status: 'invalid', error: 'Terjadi kesalahan internal saat validasi kode.' };
     }
 };
@@ -92,14 +102,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onShowInfo
 
     // Invite Code Login
     if (trimmedCode) {
-        // This regex provides quick client-side feedback on format
-        const validCodeFormatRegex = /^(?:[A-Z0-9]{5}|[A-Z0-9]{7}|[A-Z0-9]{9}|GSAID\d{5})$/;
-        if (trimmedCode !== 'RADINALLSHARE' && !validCodeFormatRegex.test(trimmedCode)) {
-            setError('Format kode invite tidak valid atau salah.');
-            setIsLoading(false);
-            return;
-        }
-
         // Generate or retrieve a unique user ID for per-user cooldown tracking
         let userId = localStorage.getItem('abmut_user_id');
         if (!userId) {
@@ -107,22 +109,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onShowInfo
             localStorage.setItem('abmut_user_id', userId);
         }
 
-        // Use client-side validation instead of fetch
         try {
             const data = await validateInviteCode(trimmedCode, userId);
 
             if (data.status === 'valid') {
-                setSuccessMessage('Berhasil');
+                setSuccessMessage('Berhasil Masuk!');
                 onLoginSuccess('invite', trimmedCode, data.durationMs);
             } else if (data.status === 'reused') {
-                setSuccessMessage('Sesi uji coba dilanjutkan (terbatas)');
+                setError('Kode sudah digunakan. Coba lagi setelah masa tunggu berakhir.');
+                // Trigger login but with an expired session to show the timer.
                 onLoginSuccess('invite', trimmedCode, 0, data.resetTimestamp);
             } else { // 'invalid'
                 setError(data.error || 'Terjadi kesalahan validasi.');
                 setIsLoading(false);
             }
         } catch (err) {
-            // This catch is for unexpected errors in the validation function itself
             setError('Terjadi kesalahan tak terduga. Silakan coba lagi.');
             setIsLoading(false);
         }
@@ -156,7 +157,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onShowInfo
                         disabled={isLoading}
                         autoComplete="off"
                     />
-                    <p className="text-center text-xs text-slate-500 mt-2">Kode Uji Coba yang Anda gunakan memiliki durasi waktu. Perhatikan pengingat! Aktivitas Anda akan di reset setelah sesi berakhir.</p>
+                    <p className="text-center text-xs text-slate-500 mt-2">Kode Uji Coba memiliki durasi waktu terbatas. Aktivitas Anda tidak disimpan setelah sesi berakhir.</p>
                 </div>
 
                 {isApiKeyFeatureEnabled && (
@@ -169,7 +170,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onShowInfo
 
                         <div>
                             <label htmlFor="api-key" className="block text-sm font-medium text-gray-300 font-display text-center">
-                                Masuk dengan API KEY (Tingkat Lanjut)
+                                Masuk dengan API KEY (Akses Penuh)
                             </label>
                             <input
                                 type="password"
@@ -181,7 +182,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onShowInfo
                                 disabled={isLoading}
                                 autoComplete="off"
                             />
-                            <p className="text-center text-xs text-slate-500 mt-2">Kunci API Anda tidak disimpan dan hanya digunakan selama sesi Anda berlangsung. Semua Aktivitas Anda akan tersimpan otomatis di Menu Tracking.</p>
+                            <p className="text-center text-xs text-slate-500 mt-2">Akses tanpa batas dan semua aktivitas Anda akan tersimpan otomatis di browser.</p>
                         </div>
                     </>
                 )}

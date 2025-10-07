@@ -39,7 +39,23 @@ async function callProxy(payload: GenerateContentParameters): Promise<{ text: st
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Gagal mem-parsing respons error dari server." }));
-        throw new Error(errorData.error || 'Gagal menghubungi server proxy. Silakan coba lagi.');
+        console.error("Proxy Error:", errorData.error || response.statusText);
+        
+        // Prioritize the specific JSON error message from the proxy if it exists.
+        // This is crucial for displaying custom messages like the rate limit warning.
+        if (errorData.error) {
+            throw new Error(errorData.error);
+        }
+
+        // Generic fallback messages if the server sends a non-JSON error or no 'error' key.
+        let userMessage = 'Layanan Uji Coba sedang mengalami gangguan (proxy error). Silakan coba lagi nanti.';
+        if (response.status === 429) {
+             userMessage = 'Layanan Uji Coba sedang mengalami lalu lintas sangat tinggi. Silakan coba lagi dalam beberapa menit.';
+        } else if (response.status >= 500) {
+             userMessage = 'Layanan Uji Coba sedang sibuk atau kuota harian telah tercapai. Coba lagi nanti, atau gunakan Kunci API pribadi untuk akses tanpa batas.';
+        }
+        
+        throw new Error(userMessage);
     }
     return response.json();
 }
@@ -78,13 +94,82 @@ Gunakan konteks ini untuk menyesuaikan gaya bahasa dan contoh agar relevan bagi 
     `.trim();
 };
 
+export const createPeranPrompt = (
+    studentData: StudentData,
+    courseName?: string,
+    specificTask?: string,
+): string => {
+    const { faculty, studyProgram } = studentData;
+    const effectiveCourseName = courseName || 'yang relevan dengan topik';
+
+    // Base P.E.R.A.N prompt
+    let prompt = `
+#-- INSTRUKSI UTAMA UNTUK ABM-UT --#
+
+## BAGIAN 1: PERAN DAN IDENTITAS ANDA (PERSONA)
+Anda berperan sebagai ABM-UT, seorang Asisten Belajar Mahasiswa yang bertindak sebagai dosen senior dan pembimbing akademik ahli dari Fakultas ${faculty}, Program Studi ${studyProgram}, dengan spesialisasi pada mata kuliah ${effectiveCourseName}. Anda sangat terampil dalam menyederhanakan konsep yang rumit menggunakan analogi yang relevan dan contoh-contoh praktis dari dunia nyata. Gaya Anda suportif, sabar, dan selalu bertujuan untuk menumbuhkan pemikiran kritis.
+
+## BAGIAN 2: AUDIENS TARGET ANDA (AUDIENS)
+Seluruh respons Anda ditujukan kepada mahasiswa Universitas Terbuka (UT). Ingatlah bahwa mereka adalah pembelajar dewasa yang mandiri, seringkali menyeimbangkan studi dengan pekerjaan. Oleh karena itu, penjelasan Anda harus:
+- Jelas, lugas, dan to-the-point.
+- Dapat dipahami tanpa perlu kehadiran dosen secara fisik (cocok untuk belajar asinkron).
+- Sebisa mungkin, hubungkan konsep teori dengan aplikasi praktis di dunia kerja.
+
+## BAGIAN 3: EKSPEKTASI, RINCIAN, DAN FORMAT JAWABAN (EKSPEKTASI & RINCIAN)
+Untuk setiap pertanyaan atau materi yang diberikan, Anda WAJIB memberikan jawaban yang terstruktur dan komprehensif.
+
+### Struktur Konten Wajib:
+Setiap penjelasan harus selalu mengandung empat elemen berikut secara berurutan:
+1.  **Definisi dan Konsep Inti:** Jelaskan secara jelas apa itu topik yang dibahas.
+2.  **Contoh Konkret/Studi Kasus:** Berikan minimal satu contoh yang mudah dipahami untuk mengilustrasikan konsep tersebut.
+3.  **Relevansi dan Aplikasi:** Jelaskan mengapa konsep ini penting dan bagaimana ia digunakan dalam praktik nyata di bidang ${studyProgram}.
+4.  **Kaitan dengan Topik Lain:** Tunjukkan bagaimana konsep ini berhubungan dengan materi lain dalam mata kuliah ${effectiveCourseName} untuk memberikan gambaran besar.
+
+### Aturan Format Wajib:
+- Gunakan format Markdown untuk keterbacaan maksimal.
+- Gunakan **Heading (\`##\`)** untuk judul utama dan **Sub-heading (\`###\`)** untuk sub-bagian.
+- **Cetak tebal (semibold)** semua istilah atau konsep kunci saat pertama kali disebutkan.
+- Gunakan **bullet points (\`*\`)** atau **numbered list (\`1.\`)** untuk memecah informasi yang kompleks.
+- Jika pertanyaan adalah tentang cara mengerjakan tugas atau soal, berikan jawaban dalam format **panduan langkah-demi-langkah (step-by-step)**.
+
+## BAGIAN 4: NADA DAN GAYA BAHASA (NADA)
+Gunakan gaya bahasa **formal-akademik yang hangat, suportif, dan mencerahkan**. Hindari kesan menggurui. Posisikan diri Anda sebagai mitra belajar mahasiswa.
+- **Aturan Jargon:** Jika Anda harus menggunakan istilah teknis atau asing (contoh: *Economies of Scale*), **selalu** berikan penjelasan singkat atau padanan katanya dalam bahasa Indonesia di dalam kurung setelahnya.
+- **Penutup Interaktif:** Selalu akhiri jawaban Anda dengan **satu pertanyaan reflektif** yang relevan dengan topik untuk mendorong mahasiswa berpikir lebih lanjut.
+    `.trim();
+
+    if (specificTask) {
+        prompt += `
+---
+#-- KONTEKS TUGAS SPESIFIK SAAT INI --#
+${specificTask}
+---
+        `;
+    }
+    
+    return prompt;
+};
+
 async function executeGeneration(payload: GenerateContentParameters): Promise<{ text: string }> {
     if (loginMethod === 'invite') {
         return callProxy(payload);
     } else {
         const ai = getAi()!;
-        const response = await ai.models.generateContent(payload);
-        return { text: response.text };
+        try {
+            const response = await ai.models.generateContent(payload);
+            return { text: response.text };
+        } catch (error) {
+            console.error("Gemini API Error (API Key Mode):", error);
+            if (error instanceof Error) {
+                if (error.message.includes('API key not valid')) {
+                    throw new Error('Kunci API Anda tidak valid. Silakan periksa kembali di halaman Integrasi API.');
+                }
+                if (error.message.toLowerCase().includes('quota')) {
+                    throw new Error('Anda telah melebihi kuota penggunaan Kunci API Anda. Silakan periksa dasbor Google AI Studio Anda.');
+                }
+            }
+            throw new Error('Terjadi kesalahan saat menghubungi API Gemini. Periksa koneksi atau Kunci API Anda.');
+        }
     }
 }
 
@@ -96,10 +181,19 @@ export const getAiResponse = async (
     systemPrompt: string
 ): Promise<string> => {
     try {
-        const studentContext = buildStudentContext(studentData);
         const globalSystemInstruction = localStorage.getItem('globalSystemInstruction') || '';
         
-        const combinedSystemInstruction = [globalSystemInstruction, systemPrompt, studentContext].filter(Boolean).join('\n\n');
+        let combinedSystemInstruction: string;
+
+        if (systemPrompt.includes('#-- INSTRUKSI UTAMA UNTUK ABM-UT --#')) {
+            // This is a PERAN prompt, it already has student context. Don't add the old studentContext again.
+            combinedSystemInstruction = [globalSystemInstruction, systemPrompt].filter(Boolean).join('\n\n');
+        } else {
+            // Original logic for other features
+            const studentContext = buildStudentContext(studentData);
+            combinedSystemInstruction = [globalSystemInstruction, systemPrompt, studentContext].filter(Boolean).join('\n\n');
+        }
+
 
         const history: Content[] = await Promise.all(
             conversation.map(async (msg) => {
@@ -124,6 +218,7 @@ export const getAiResponse = async (
         return response.text;
     } catch (error) {
         console.error("Error calling Gemini API:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal mendapatkan respons dari ABM-UT. Silakan coba lagi.");
     }
 };
@@ -190,6 +285,7 @@ Fokuslah pada konsep-konsep paling penting dari materi.
         return JSON.parse(jsonStr) as Flashcard[];
     } catch (error) {
         console.error("Error generating flashcards:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat flashcards. Periksa kembali materi yang Anda berikan atau coba lagi.");
     }
 };
@@ -259,6 +355,7 @@ Pastikan pilihan jawaban masuk akal dan pengecohnya relevan.
         return JSON.parse(jsonStr) as QuizQuestion[];
     } catch (error) {
         console.error("Error generating quiz:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat kuis. Periksa kembali materi yang Anda berikan atau coba lagi.");
     }
 };
@@ -305,6 +402,7 @@ ${materialText || '(Gunakan file yang diunggah)'}
         return response.text;
     } catch (error) {
         console.error("Error generating summary:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat rangkuman. Periksa kembali materi yang Anda berikan atau coba lagi.");
     }
 };
@@ -355,6 +453,7 @@ Format sitasi tersebut ke dalam JSON.
         return JSON.parse(jsonStr) as { bibliography: string; parenthetical: string; narrative: string };
     } catch (error) {
         console.error("Error generating citation:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat sitasi. Periksa kembali data yang Anda masukkan atau coba lagi.");
     }
 };
@@ -411,6 +510,7 @@ Keluarkan hasilnya dalam format JSON.
         return JSON.parse(jsonStr) as { paraphrasedText: string, editorNotes: string[] };
     } catch (error) {
         console.error("Error generating paraphrase:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal memparafrasakan teks. Silakan coba lagi.");
     }
 };
@@ -482,6 +582,7 @@ Keluarkan hasilnya HANYA dalam format JSON yang valid.
         return JSON.parse(jsonStr) as ArgumentOutline;
     } catch (error) {
         console.error("Error generating argument outline:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat kerangka argumen. Silakan coba lagi.");
     }
 };
@@ -514,6 +615,7 @@ Gunakan format Markdown yang sangat rapi dan terstruktur. Mulai laporan sekarang
         return response.text;
     } catch (error) {
         console.error("Error generating case study analysis:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal menganalisis studi kasus. Periksa kembali materi yang Anda berikan atau coba lagi.");
     }
 };
@@ -549,6 +651,7 @@ Mulai sekarang.
         return response.text;
     } catch (error) {
         console.error("Error generating Karil guidance:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal memberikan bimbingan. Periksa kembali data yang Anda berikan atau coba lagi.");
     }
 };
@@ -583,6 +686,7 @@ Mulai sekarang.
         return response.text;
     } catch (error) {
         console.error("Error generating theory synthesis:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat sintesis teori. Periksa kembali data yang Anda berikan atau coba lagi.");
     }
 };
@@ -620,6 +724,7 @@ Mulai sekarang.
         return response.text;
     } catch (error) {
         console.error("Error generating exam prep package:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat paket persiapan ujian. Periksa kembali materi yang Anda berikan atau coba lagi.");
     }
 };
@@ -657,6 +762,7 @@ export const generateStudyPlan = async (
         return JSON.parse(response.text.trim()) as StudyPlanResponse;
     } catch (error) {
         console.error("Error generating study plan:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat rencana belajar. Periksa kembali materi Anda atau coba lagi.");
     }
 };
@@ -677,6 +783,7 @@ export const getStudyStrategyRecommendation = async (
         return JSON.parse(response.text.trim()) as StudyStrategyResponse;
     } catch (error) {
         console.error("Error getting study strategy recommendation:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal mendapatkan rekomendasi strategi. Silakan coba lagi.");
     }
 };
@@ -692,7 +799,51 @@ export const generateStudyPlanPlus = async (
         return JSON.parse(response.text.trim()) as StudyPlanResponse;
     } catch (error) {
         console.error("Error generating study plan plus:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat Rencana Belajar +Plus. Periksa kembali materi Anda atau coba lagi.");
+    }
+};
+
+export const getStudyAdvice = async (
+    studentData: StudentData,
+    planResponse: StudyPlanResponse,
+    courseName: string,
+    learningType: string,
+    selectedMethod: string,
+    timeTechnique: string
+): Promise<string> => {
+    try {
+        const studentContext = buildStudentContext(studentData);
+        const planSummary = planResponse.detailedPlan.map(p => `- Sesi ${p.session}: ${p.action} - ${p.description}`).join('\n');
+
+        const prompt = `
+[PERAN DAN KONTEKS]
+Anda adalah ABM-UT, seorang Mentor Akademik yang memberikan saran belajar personal.
+
+[DATA MASUKAN]
+${studentContext}
+- Mata Kuliah: ${courseName}
+- Tipe Belajar Pilihan: ${learningType}
+- Metode Belajar Pilihan: ${selectedMethod}
+- Teknik Manajemen Waktu Pilihan: ${timeTechnique}
+- Ringkasan Rencana Belajar yang Dihasilkan:
+${planSummary}
+
+[TUGAS]
+Berdasarkan semua data di atas, berikan 2-3 paragraf saran belajar yang SANGAT SPESIFIK dan DAPAT DITINDAKLANJUTI.
+- Hubungkan saran Anda secara langsung dengan metode belajar (${selectedMethod}) dan teknik waktu (${timeTechnique}) yang dipilih.
+- Berikan tips praktis tentang bagaimana mahasiswa dapat menerapkan kombinasi strategi ini secara efektif.
+- Akhiri dengan kalimat motivasi yang singkat dan kuat.
+- Format jawaban dalam Markdown.
+`;
+
+        const payload = await createTextPayload(prompt);
+        const response = await executeGeneration(payload);
+        return response.text;
+    } catch (error) {
+        console.error("Error getting study advice:", error);
+        if (error instanceof Error) throw error;
+        throw new Error("Gagal mendapatkan saran belajar dari ABM-UT. Silakan coba lagi.");
     }
 };
 
@@ -708,6 +859,7 @@ export const generateTutonAnalysis = async (
         return response.text;
     } catch (error) {
         console.error("Error generating Tuton analysis:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal menganalisis materi Tuton. Periksa kembali materi yang Anda berikan atau coba lagi.");
     }
 };
@@ -723,6 +875,7 @@ export const generateTutonDiscussionAnalysis = async (
         return response.text;
     } catch (error) {
         console.error("Error generating Tuton discussion analysis:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal menganalisis materi diskusi. Periksa kembali materi yang Anda berikan atau coba lagi.");
     }
 };
@@ -739,6 +892,7 @@ export const synthesizeTutonDiscussion = async (
         return response.text;
     } catch (error) {
         console.error("Error synthesizing Tuton discussion:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal mensintesis jawaban akhir. Silakan coba lagi.");
     }
 };
@@ -764,6 +918,7 @@ export const generateGroupProjectSummary = async (
         return JSON.parse(response.text.trim()) as GroupProjectSummary;
     } catch (error) {
         console.error("Error generating group project summary:", error);
+        if (error instanceof Error) throw error;
         throw new Error("Gagal membuat rangkuman sesi kelompok. Silakan coba lagi.");
     }
 };

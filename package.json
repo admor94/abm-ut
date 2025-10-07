@@ -16,7 +16,8 @@
     "marked": "^4.0.12",
     "uuid": "^9.0.0",
     "jspdf-autotable": "^3.5.23",
-    "dompurify": "^3.1.5"
+    "dompurify": "^3.1.5",
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

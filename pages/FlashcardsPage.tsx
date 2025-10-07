@@ -333,7 +333,7 @@ export const FlashcardsPage: React.FC<FlashcardsPageProps> = ({ studentData, set
                     </div>
                 );
             case 'generating':
-                return <LoadingState message="Mempersiapkan Flashcards Anda..." />;
+                return <LoadingState message="ABM-UT sedang mempersiapkan Flashcards Anda..." />;
             case 'display':
                 return (
                     <div>

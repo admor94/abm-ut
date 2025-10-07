@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { AppView, StudentData, StudyPlanResponse, StudyStrategyResponse, StudyPlanSession } from '../types';
 import { PageHeader } from '../components/PageHeader';
 import { PARENT_VIEW_MAP } from '../constants';
-import { generateStudyPlanPlus, getStudyStrategyRecommendation } from '../services/geminiService';
+import { generateStudyPlanPlus, getStudyStrategyRecommendation, getStudyAdvice } from '../services/geminiService';
 import { CourseSearchInput } from '../components/CourseSearchInput';
 
 // --- Notification Helper Functions ---
@@ -98,6 +98,11 @@ export const StudyPlanPlusPage: React.FC<StudyPlanPlusPageProps> = ({ studentDat
     const [planResponse, setPlanResponse] = useState<StudyPlanResponse | null>(null);
     const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
 
+    // New states for automated advice
+    const [aiAdvice, setAiAdvice] = useState('');
+    const [aiAdviceHtml, setAiAdviceHtml] = useState('');
+    const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
+
     // FIX: Add state for rendered HTML to handle async parsing of final report
     const [synergyAnalysisHtml, setSynergyAnalysisHtml] = useState('');
     const [materialSummaryHtml, setMaterialSummaryHtml] = useState('');
@@ -113,6 +118,13 @@ export const StudyPlanPlusPage: React.FC<StudyPlanPlusPageProps> = ({ studentDat
             Promise.resolve(marked.parse(planResponse.materialSummary)).then(html => html && setMaterialSummaryHtml(DOMPurify.sanitize(html as string)));
         }
     }, [planResponse?.materialSummary]);
+
+    // UseEffect for parsing AI advice markdown
+    useEffect(() => {
+        if (aiAdvice) {
+            Promise.resolve(marked.parse(aiAdvice)).then(html => html && setAiAdviceHtml(DOMPurify.sanitize(html as string)));
+        }
+    }, [aiAdvice]);
 
     const groupedPlan = useMemo(() => {
         if (!planResponse) return [];
@@ -191,6 +203,19 @@ export const StudyPlanPlusPage: React.FC<StudyPlanPlusPageProps> = ({ studentDat
             setPlanResponse(result);
             setCurrentSessionIndex(0); // Reset for new plan
             setStep('report');
+            
+            // Immediately fetch advice after plan generation
+            setIsLoadingAdvice(true);
+            try {
+                const advice = await getStudyAdvice(studentData, result, courseName, learningType, selectedMethod, finalTimeTechnique);
+                setAiAdvice(advice);
+            } catch (adviceError) {
+                console.error("Failed to get study advice:", adviceError);
+                setAiAdvice("Gagal memuat saran belajar. Anda dapat melanjutkan tanpa saran ini.");
+            } finally {
+                setIsLoadingAdvice(false);
+            }
+
         } catch (err: any) {
             setError(err.message || "Terjadi kesalahan.");
             setStep('input');
@@ -394,11 +419,22 @@ export const StudyPlanPlusPage: React.FC<StudyPlanPlusPageProps> = ({ studentDat
             case 'report': if (!planResponse) return null; return(
                 <div className="space-y-6">
                     <div className="text-center"><h3 className="text-3xl font-bold font-display text-white">Laporan Rencana Belajar +Plus Lengkap</h3></div>
-                    <div className="bg-slate-900/50 p-6 rounded-lg text-sm space-y-1"><p><strong>Mata Kuliah:</strong> {courseName} | <strong>Topik Utama:</strong> {mainTopic}</p><p><strong>Tipe Belajar:</strong> {learningType} | <strong>Metode:</strong> {selectedMethod}</p><p><strong>Teknik Waktu:</strong> {finalTimeTechnique}</p></div>
+                    <div className="bg-slate-900/50 p-6 rounded-lg text-sm space-y-1"><p><strong>Mata Kuliah:</strong> {courseName} | <strong>Topik Utama:</strong> {mainTopic}</p><p><strong>Tipe Belajar:</strong> ${learningType} | <strong>Metode:</strong> ${selectedMethod}</p><p><strong>Teknik Waktu:</strong> ${finalTimeTechnique}</p></div>
                     {/* FIX: Use state variable for HTML instead of parseSync */}
                     {planResponse.synergyAnalysis && <div className="bg-slate-900/50 p-6 rounded-lg"><h4 className="text-xl font-bold text-white font-display mb-3">Analisis Sinergi</h4><div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: synergyAnalysisHtml }} /></div>}
                     {/* FIX: Use state variable for HTML instead of parseSync */}
                     <div className="bg-slate-900/50 p-6 rounded-lg"><h4 className="text-xl font-bold text-white font-display mb-3">Rangkuman Materi</h4><div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: materialSummaryHtml }} /></div>
+                    
+                    {/* New AI Advice Section */}
+                    <div className="bg-slate-900/50 p-6 rounded-lg">
+                        <h4 className="text-xl font-bold text-white font-display mb-3">Saran Belajar dari ABM-UT</h4>
+                        {isLoadingAdvice ? (
+                            <div className="flex items-center justify-center p-4"><div className="animate-spin h-6 w-6 text-ut-blue-light"></div><p className="ml-3">Memuat saran...</p></div>
+                        ) : (
+                            <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: aiAdviceHtml }} />
+                        )}
+                    </div>
+
                     <div className="mt-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700"><h4 className="font-bold text-lg text-ut-blue-light font-display text-center mb-3">Atur Pengingat Sesi Belajar Harian</h4><div className="flex flex-col sm:flex-row items-center justify-center gap-4"><input type="time" value={reminderTime} onChange={e => setReminderTime(e.target.value)} className="block w-full sm:w-auto px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg" /><button onClick={handleSetReminders} className="w-full sm:w-auto py-3 px-6 font-display font-medium text-white bg-ut-blue rounded-lg" disabled={!startDate}>Setel Pengingat</button></div>{!startDate && <p className="text-xs text-ut-yellow text-center mt-2">Atur "Tanggal Mulai Belajar" di halaman awal untuk mengaktifkan pengingat.</p>}</div>
                     <div className="flex flex-col md:flex-row gap-4"><button onClick={() => downloadAs('pdf')} className="flex-1 py-3 px-4 font-display font-medium text-white bg-ut-green rounded-lg">Unduh PDF</button><button onClick={() => downloadAs('word')} className="flex-1 py-3 px-4 font-display font-medium text-white bg-ut-blue rounded-lg">Unduh Word</button><button onClick={() => downloadAs('excel')} className="flex-1 py-3 px-4 font-display font-medium text-white bg-yellow-600 rounded-lg">Unduh Excel</button><button onClick={() => setStep('input')} className="flex-1 py-3 px-4 font-display font-medium bg-gray-600 rounded-lg">Buat Baru</button></div>
                 </div>

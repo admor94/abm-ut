@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { jsPDF } from 'jspdf';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import type { LearningHistoryEntry, AppView, StudentData, PersonalFolder } from '../types';
 import { PageHeader } from '../components/PageHeader';
 import { PARENT_VIEW_MAP } from '../constants';
@@ -132,6 +133,19 @@ const EntryActions: React.FC<{
 export const LearningHistory: React.FC<LearningHistoryProps> = ({ history, studentData, setActiveView, onDelete, onContinue, folders, onAssignHistoryToFolder }) => {
   const parentView = PARENT_VIEW_MAP['Riwayat Belajar Mahasiswa'];
 
+  const chartData = useMemo(() => {
+    if (history.length === 0) return [];
+    const counts = history.reduce((acc, entry) => {
+        const viewName = entry.view;
+        acc[viewName] = (acc[viewName] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(counts)
+        .map(([name, count]) => ({ name, Sesi: count }))
+        .sort((a, b) => b.Sesi - a.Sesi);
+  }, [history]);
+
   const handleDelete = (id: string) => {
     if (window.confirm("Apakah Anda yakin ingin menghapus riwayat sesi ini?")) {
         onDelete(id);
@@ -151,6 +165,24 @@ export const LearningHistory: React.FC<LearningHistoryProps> = ({ history, stude
                 parentView={parentView}
                 setActiveView={setActiveView}
               />
+              
+              <div className="mb-8 p-6 bg-slate-900/50 rounded-lg border border-slate-700">
+                  <h2 className="text-xl font-bold text-white font-display mb-4">Visualisasi Aktivitas Belajar</h2>
+                  {history.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 50 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
+                              <XAxis dataKey="name" tick={{ fill: '#A0AEC0', fontSize: 10 }} angle={-45} textAnchor="end" interval={0} />
+                              <YAxis allowDecimals={false} tick={{ fill: '#A0AEC0' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#1A202C', border: '1px solid #4A5568' }} />
+                              <Legend />
+                              <Bar dataKey="Sesi" fill="#346BF1" />
+                          </BarChart>
+                      </ResponsiveContainer>
+                  ) : (
+                      <p className="text-slate-500 text-center">Data tidak cukup untuk menampilkan visualisasi.</p>
+                  )}
+              </div>
 
               <div className="space-y-4">
                 {history.length === 0 ? (

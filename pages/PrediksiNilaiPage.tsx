@@ -114,7 +114,7 @@ Berikan saran belajar yang konkret, personal, dan memotivasi untuk membantu maha
             const adviceText = await getAiResponse([], studentData, prompt);
             setAiAdvice(adviceText);
         } catch (error) {
-            setAiAdvice("Maaf, terjadi kesalahan saat mencoba mendapatkan saran dari AI. Silakan coba lagi.");
+            setAiAdvice("Maaf, terjadi kesalahan saat mencoba mendapatkan saran dari ABM-UT. Silakan coba lagi.");
         } finally {
             setIsLoadingAdvice(false);
         }
@@ -162,7 +162,7 @@ Berikan saran belajar yang konkret, personal, dan memotivasi untuk membantu maha
                                     </p>
                                     {pesanHasil && <p className="text-sm text-ut-yellow mt-2">{pesanHasil}</p>}
                                     <button onClick={handleGetAdvice} disabled={isLoadingAdvice} className="mt-6 px-4 py-2 text-sm bg-ut-green hover:bg-green-500 rounded-lg shadow-md disabled:bg-gray-500">
-                                        {isLoadingAdvice ? 'Memuat Saran...' : 'Minta Saran Belajar ke AI'}
+                                        {isLoadingAdvice ? 'Memuat Saran...' : 'Minta Saran Belajar ke ABM-UT'}
                                     </button>
                                 </>
                             ) : (

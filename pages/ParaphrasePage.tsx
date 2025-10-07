@@ -24,7 +24,7 @@ const LoadingState: React.FC = () => (
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <p className="text-xl font-display text-white">AI sedang menganalisis dan menulis ulang teks Anda...</p>
+        <p className="text-xl font-display text-white">ABM-UT sedang menganalisis dan menulis ulang teks Anda...</p>
         <p className="text-gray-400 mt-2">Ini mungkin akan memakan waktu sejenak.</p>
     </div>
 );
@@ -101,7 +101,7 @@ export const ParaphrasePage: React.FC<ParaphrasePageProps> = ({ studentData, set
             case 'input':
                 return (
                     <div className="max-w-5xl mx-auto space-y-6">
-                        <p className="text-center text-lg text-gray-300">Tempelkan teks Anda di bawah, pilih instruksi perbaikan, dan biarkan AI membantu menyempurnakannya.</p>
+                        <p className="text-center text-lg text-gray-300">Tempelkan teks Anda di bawah, pilih instruksi perbaikan, dan biarkan ABM-UT membantu menyempurnakannya.</p>
                         <div>
                             <label htmlFor="originalText" className="block text-sm font-medium text-gray-300 font-display">Teks Asli</label>
                             <textarea 

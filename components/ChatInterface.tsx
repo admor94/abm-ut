@@ -77,7 +77,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ studentData, syste
             onSessionComplete(finalConversation);
         } catch (error) {
             console.error("Error in chat:", error);
-            const errorMessage: ChatMessage = { role: 'model', text: 'Maaf, terjadi kesalahan. Coba lagi nanti.' };
+            const displayMessage = error instanceof Error ? error.message : 'Maaf, terjadi kesalahan yang tidak diketahui. Coba lagi nanti.';
+            const errorMessage: ChatMessage = { role: 'model', text: displayMessage };
             setConversation(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);

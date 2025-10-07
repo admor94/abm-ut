@@ -13,15 +13,14 @@ interface CardData {
   targetView: AppView;
 }
 
+// FIX: Updated colorClassMap to use parent hub view names.
 const colorClassMap: Partial<Record<AppView, string>> = {
-    'Kreativitas': 'hover-bar-green',
-    'Interaktif': 'hover-bar-yellow',
-    'Alat Bantu': 'hover-bar-red',
-    'Simulasi': 'hover-bar-blue',
-    'Tutorial Online': 'hover-bar-yellow',
-    'Tracking': 'hover-bar-blue',
-    'Informasi': 'hover-bar-blue',
+    'Belajar & Latihan': 'hover-bar-green',
+    'Produktivitas & Riset': 'hover-bar-yellow',
+    'Tutorial Online': 'hover-bar-red',
+    'Riwayat & Pelacakan': 'hover-bar-blue',
     'Seputar UT': 'hover-bar-blue',
+    'Pengaturan & Bantuan': 'hover-bar-blue',
 };
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -54,15 +53,18 @@ const iconMap: Record<string, React.ReactNode> = {
     'Pemahaman Materi': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>,
     'Pemahaman Diskusi': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.397 48.397 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>,
     'Asisten BMP': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>,
+    'Eksperimental': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.362-3.797A8.33 8.33 0 0112 2.25c1.153 0 2.243.3 3.224.862l.514.264M16.732 10.375A8.286 8.286 0 0012 11.625a8.286 8.286 0 00-4.732-1.25M12 11.625v9.375" /></svg>,
     // Seputar UT
     'Panduan Lengkap UT': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>,
     'Kalender Akademik': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M9.75 14.25h.008v.008H9.75v-.008zm3 0h.008v.008H12.75v-.008zm3 0h.008v.008H15.75v-.008z" /></svg>,
     'Informasi UT Daerah': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>,
     'Informasi & Layanan UT': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.562L16.25 22.5l-.648-1.938a3.375 3.375 0 00-2.672-2.672L11.25 18l1.938-.648a3.375 3.375 0 002.672-2.672L16.25 13.5l.648 1.938a3.375 3.375 0 002.672 2.672L21.5 18l-1.938.648a3.375 3.375 0 00-2.672 2.672z" /></svg>,
+    'Referensi Akademik': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>,
     // Tracking & Informasi
     'Riwayat Belajar Mahasiswa': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>,
     'Lacak Pengingat': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.31 5.632l-1.388.925A2.25 2.25 0 012.5 14.25v-2.5c0-.98.65-1.84.8-2.218a48.455 48.455 0 0111.9-2.278zM4.5 15.75A3.75 3.75 0 008.25 12H16.5" /></svg>,
     'Folder Mata Kuliah': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>,
+    'Folder Pribadi': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10.5v6m3-3H9m4.06-7.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>,
     'FAQ': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>,
     'Panduan Integrasi API': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>,
     'Integrasi API': <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>,
@@ -74,6 +76,7 @@ const iconMap: Record<string, React.ReactNode> = {
 
 const ToolCard: React.FC<{ card: CardData; setActiveView: (view: AppView) => void; colorClass: string; }> = ({ card, setActiveView, colorClass }) => {
     const isResetCard = card.targetView === 'Reset Aplikasi';
+    const isExperimentalCard = card.targetView === 'Eksperimental';
     const finalColorClass = isResetCard ? 'hover-bar-red' : colorClass;
     
     let iconColorClass = 'text-ut-blue-light';
@@ -91,12 +94,12 @@ const ToolCard: React.FC<{ card: CardData; setActiveView: (view: AppView) => voi
         <a 
             href={`#${card.targetView.replace(/\s+/g, '-')}`}
             onClick={(e) => { e.preventDefault(); setActiveView(card.targetView); }}
-            className={`group flex flex-col items-center justify-start text-center p-6 bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-xl transition-all duration-300 hover:border-slate-600/50 hover:bg-slate-700/50 hover:-translate-y-2 cursor-pointer link-hover-effect ${finalColorClass}`}
+            className={`group flex flex-col items-center justify-start text-center p-6 bg-slate-800/60 backdrop-blur-md border border-slate-700/50 rounded-xl transition-all duration-300 hover:border-slate-600/50 hover:bg-slate-700/50 hover:-translate-y-2 cursor-pointer link-hover-effect ${finalColorClass} ${isExperimentalCard ? 'experimental-glow' : ''}`}
         >
             <div className={`h-12 w-12 ${iconColorClass} mb-4 transition-colors`}>
                 {iconMap[card.targetView] || <div/>}
             </div>
-            <h3 className="font-semibold text-xl text-white font-display">{card.title}</h3>
+            <h3 className="font-semibold text-[22px] text-white font-display">{card.title}</h3>
             <p className="mt-2 text-slate-400 text-sm leading-relaxed flex-grow">{card.description}</p>
         </a>
     );
@@ -105,6 +108,8 @@ const ToolCard: React.FC<{ card: CardData; setActiveView: (view: AppView) => voi
 
 export const HubPage: React.FC<HubPageProps> = ({ id, pageTitle, pageDescription, sections, setActiveView }) => {
   const colorClass = colorClassMap[id] || 'hover-bar-blue';
+  const allCards = sections.flatMap(section => section.cards);
+  
   return (
     <section id={id.replace(/\s+/g, '-')} className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 md:p-12">
         <div className="text-center mb-10">
@@ -113,16 +118,10 @@ export const HubPage: React.FC<HubPageProps> = ({ id, pageTitle, pageDescription
         </div>
         
         <div className="w-full max-w-7xl">
-          <div className="space-y-12">
-            {sections.map(section => (
-              <div key={section.title}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {section.cards.map((card) => {
-                     return <ToolCard key={card.title} card={card} setActiveView={setActiveView} colorClass={colorClass} />;
-                  })}
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {allCards.map((card) => {
+                 return <ToolCard key={card.title} card={card} setActiveView={setActiveView} colorClass={colorClass} />;
+              })}
           </div>
         </div>
       </section>

@@ -377,6 +377,7 @@ interface DashboardProps {
   onProfileSubmit: (data: StudentData) => void;
   setActiveView: (view: AppView) => void;
   studyEndTime: number | null;
+  onLogout: () => void;
 }
 
 const InfoCard: React.FC<{ icon: React.ReactNode; label: string; value: string | React.ReactNode; className?: string }> = ({ icon, label, value, className }) => (
@@ -444,7 +445,7 @@ const StudyTimer: React.FC<{ initialDuration: number }> = ({ initialDuration }) 
 };
 
 
-export const Dashboard: React.FC<DashboardProps> = ({ studentData, onProfileSubmit }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ studentData, onProfileSubmit, onLogout }) => {
     const [notificationPermission, setNotificationPermission] = useState("Notification" in window ? Notification.permission : "denied");
 
     const handleRequestPermission = () => {
@@ -476,6 +477,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ studentData, onProfileSubm
                     <h1 className="text-4xl md:text-5xl font-semibold text-white font-display">Selamat Datang, {name.split(' ')[0]}!</h1>
                     <p className="mt-2 text-lg text-slate-300 max-w-3xl mx-auto md:mx-0">Berikut adalah ringkasan profil dan sesi belajar Anda.</p>
                 </div>
+                 <button 
+                    onClick={onLogout}
+                    className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-ut-red/80 text-slate-300 hover:text-white rounded-lg transition-colors duration-200"
+                    aria-label="Keluar"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span className="font-semibold hidden sm:inline">Keluar</span>
+                </button>
             </div>
         </div>
 

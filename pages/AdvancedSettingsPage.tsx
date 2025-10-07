@@ -66,7 +66,7 @@ export const AdvancedSettingsPage: React.FC<AdvancedSettingsPageProps> = ({ setA
     <section id="Pengaturan-Lanjutan" className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-12">
       <div className="text-center mb-8">
         <h1 className="text-4xl md:text-5xl font-bold text-white font-display">Pengaturan Lanjutan</h1>
-        <p className="mt-2 text-lg text-slate-300 max-w-4xl mx-auto">Kustomisasi model dan gaya respons AI sesuai preferensi Anda.</p>
+        <p className="mt-2 text-lg text-slate-300 max-w-4xl mx-auto">Kustomisasi model dan gaya respons ABM-UT sesuai preferensi Anda.</p>
       </div>
       
       <div className="w-full max-w-3xl bg-black/40 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700">

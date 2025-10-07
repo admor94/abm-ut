@@ -17,7 +17,7 @@ const categorizedFaqs = {
     },
     {
       question: "Apakah data profil saya aman?",
-      answer: "Ya. Semua data profil yang Anda masukkan, seperti nama dan jurusan, disimpan secara lokal di browser Anda menggunakan teknologi `localStorage`. Data ini tidak dikirim atau disimpan di server eksternal, sehingga privasi Anda terjaga."
+      answer: "Ya. Semua data profil yang Anda masukkan (nama, jurusan, dll.) disimpan secara lokal di browser Anda menggunakan `localStorage`. Data ini tidak dikirim atau disimpan di server eksternal, sehingga privasi Anda terjaga."
     },
     {
       question: "Apakah ABM-UT selalu memberikan jawaban yang 100% benar?",
@@ -25,83 +25,75 @@ const categorizedFaqs = {
     },
     {
       question: "Apa perbedaan antara 'Mode Uji Coba' dan 'Mode API Key'?",
-      answer: "<strong>Mode Uji Coba (Kode Invite):</strong> Menggunakan kunci API bersama dengan batasan waktu. Riwayat belajar tidak disimpan permanen dan akan hilang saat sesi berakhir. Cocok untuk mencoba fitur-fitur aplikasi. <br><strong>Mode API Key:</strong> Menggunakan kunci API Google Gemini pribadi Anda. Mode ini membuka semua fitur tanpa batas waktu dan menyimpan riwayat belajar Anda secara permanen di browser."
+      answer: "<strong>Mode Uji Coba (Kode Invite):</strong> Menggunakan kunci API bersama dengan batasan waktu. Riwayat belajar umumnya tidak disimpan permanen (kecuali untuk kode eksklusif seperti `ADMOR94`) dan akan hilang saat sesi berakhir. Cocok untuk mencoba fitur-fitur aplikasi. <br><strong>Mode API Key:</strong> Menggunakan kunci API Google Gemini pribadi Anda. Mode ini membuka semua fitur tanpa batas waktu dan menyimpan riwayat belajar Anda secara permanen di browser."
     },
-    {
-      question: "Mengapa saya harus mengisi profil terlebih dahulu?",
-      answer: "Personalisasi adalah kunci. Dengan memahami konteks Anda (fakultas, jurusan, semester), ABM-UT dapat memberikan respons, contoh, dan bimbingan yang lebih relevan dan sesuai dengan bidang studi Anda, sehingga pengalaman belajar menjadi lebih efektif."
-    }
   ],
   "Metode Belajar & Produktivitas": [
     {
         question: "Apa perbedaan 'Rencana Belajar' dan 'Rencana Belajar +Plus'?",
-        answer: "<strong>Rencana Belajar</strong> berfokus pada pembagian materi menjadi sesi-sesi belajar yang terstruktur berdasarkan metode belajar pilihan (misalnya SQ3R). <br><strong>Rencana Belajar +Plus</strong> adalah versi yang lebih canggih, di mana ABM-UT tidak hanya membuat rencana belajar, tetapi juga menganalisis dan merekomendasikan teknik manajemen waktu (seperti Pomodoro) yang paling cocok, lalu mengintegrasikannya ke dalam jadwal belajar Anda."
+        answer: "<strong>Rencana Belajar</strong> berfokus pada pembagian materi menjadi sesi-sesi belajar yang terstruktur berdasarkan metode belajar pilihan (misalnya SQ3R). <br><strong>Rencana Belajar +Plus</strong> adalah versi yang lebih canggih; ABM-UT tidak hanya membuat rencana belajar, tetapi juga menganalisis dan merekomendasikan teknik manajemen waktu (seperti Pomodoro) yang paling cocok, mengintegrasikannya ke dalam jadwal, dan memberikan saran belajar personal di akhir."
     },
     {
         question: "Apa fungsi dari 'Flashcards' dan 'Kuis Pilihan Ganda'?",
         answer: "Keduanya adalah alat bantu untuk menguji pemahaman. Anda cukup mengunggah atau menempelkan materi, dan ABM-UT akan secara otomatis membuat kartu-kartu flash interaktif atau soal kuis pilihan ganda lengkap dengan penjelasan. Ini sangat efektif untuk mempersiapkan diri sebelum ujian."
-    },
-     {
-        question: "Apa isi dari halaman 'Metode Membaca' dan 'Manajemen Waktu'?",
-        answer: "Halaman-halaman tersebut berisi panduan teoretis dan praktis mengenai berbagai metode belajar dan produktivitas yang teruji secara ilmiah, seperti SQ3R, Skimming, Matriks Eisenhower, dan Teknik Pomodoro. Gunakan halaman ini sebagai referensi untuk memilih metode yang paling sesuai untuk Anda di fitur 'Rencana Belajar'."
     }
   ],
   "Asisten Interaktif": [
     {
       question: "Apa bedanya 'Diskusi', 'Konsultasi', 'Debat Cerdas', dan 'Teknik Feynman'?",
-      answer: "<strong>Diskusi dengan ABM-UT</strong> adalah untuk bertukar pikiran dengan ABM-UT sebagai teman sejawat yang cerdas. <br><strong>Konsultasi Belajar ABM-UT</strong> adalah untuk sesi bimbingan yang lebih serius seolah dengan mentor atau dosen. <br><strong>Debat Cerdas</strong> adalah untuk melatih argumen melawan berbagai persona ABM-UT yang menantang (misalnya Pengkritik Skeptis). <br><strong>Teknik Feynman</strong> adalah untuk menyederhanakan konsep sulit dengan 'mengajari' ABM-UT yang berperan sebagai murid awam."
+      answer: "Setiap fitur memiliki peran ABM-UT yang berbeda: <br><strong>Diskusi dengan ABM-UT:</strong> ABM-UT berperan sebagai teman sejawat yang cerdas. <br><strong>Konsultasi Belajar:</strong> ABM-UT berperan sebagai mentor atau dosen yang profesional. <br><strong>Debat Cerdas:</strong> ABM-UT menjadi lawan debat yang mengambil berbagai persona menantang (misal, Pengkritik Skeptis). <br><strong>Teknik Feynman:</strong> Anda 'mengajari' sebuah konsep kepada ABM-UT yang berperan sebagai murid awam."
     },
     {
       question: "Apa fungsi 'Ruang Kerja Kelompok Belajar'?",
-      answer: "Fitur ini mensimulasikan sesi kerja kelompok. Anda memasukkan nama anggota tim Anda, dan ABM-UT akan bertindak sebagai fasilitator sekaligus mensimulasikan anggota tim lainnya. Ini berguna untuk brainstorming ide proyek atau memecahkan masalah bersama secara virtual."
+      answer: "Fitur ini mensimulasikan sesi kerja kelompok. Anda memasukkan nama anggota tim, dan ABM-UT akan bertindak sebagai fasilitator sekaligus mensimulasikan anggota tim lainnya untuk brainstorming ide proyek atau memecahkan masalah bersama secara virtual."
     }
   ],
   "Alat Bantu Penulisan": [
     {
       question: "Bagaimana cara kerja 'Buat Rangkuman Materi'?",
-      answer: "Anda dapat menempelkan teks langsung atau mengunggah berbagai jenis file (seperti PDF, Word, gambar, bahkan video). ABM-UT akan menganalisis konten tersebut dan membuat ringkasan sesuai dengan jenis (paragraf, poin-poin, abstrak) dan panjang (singkat, sedang, panjang) yang Anda pilih. Ini sangat berguna untuk memahami inti dari materi yang panjang dengan cepat."
+      answer: "Anda dapat menempelkan teks atau mengunggah file. ABM-UT akan menganalisis konten dan membuat ringkasan sesuai jenis (paragraf, poin-poin, abstrak) dan panjang (singkat, sedang, panjang) yang Anda pilih."
     },
     {
       question: "Apa yang dilakukan 'Asisten Sitasi' dan 'Parafrasa & Gaya Bahasa'?",
-      answer: "<strong>Asisten Sitasi</strong> membantu Anda membuat format kutipan dan daftar pustaka yang benar dalam gaya APA, MLA, atau Chicago. <br><strong>Parafrasa & Gaya Bahasa</strong> membantu Anda menulis ulang kalimat atau paragraf untuk menghindari plagiarisme dan memperbaiki gaya bahasa menjadi lebih formal atau sederhana."
+      answer: "<strong>Asisten Sitasi</strong> membantu Anda membuat format kutipan dan daftar pustaka yang benar dalam gaya APA, MLA, atau Chicago. <br><strong>Parafrasa & Gaya Bahasa</strong> membantu Anda menulis ulang kalimat atau paragraf untuk menghindari plagiarisme dan memperbaiki gaya bahasa."
     },
      {
       question: "Bagaimana cara kerja 'Perancang Argumen'?",
-      answer: "Ini bukan sekadar pembuat esai otomatis. Anda akan melalui sesi bimbingan interaktif di mana ABM-UT akan mengajukan pertanyaan-pertanyaan Sokratik (bertanya balik) untuk memandu Anda membangun kerangka argumen yang kuat, mulai dari tesis, bukti, sanggahan, hingga kesimpulan, berdasarkan pemikiran Anda sendiri."
+      answer: "Ini bukan pembuat esai otomatis. Anda akan melalui sesi bimbingan interaktif di mana ABM-UT mengajukan pertanyaan-pertanyaan Sokratik (bertanya balik) untuk memandu Anda membangun kerangka argumen yang kuat—mulai dari tesis, bukti, sanggahan, hingga kesimpulan—berdasarkan pemikiran Anda sendiri."
     }
   ],
   "Simulasi & Riset": [
      {
       question: "Apa kegunaan 'Analisis Studi Kasus'?",
-      answer: "Gunakan fitur ini ketika Anda perlu menerapkan kerangka kerja teoretis (seperti SWOT, PESTLE, atau Porter's Five Forces) pada sebuah skenario bisnis atau sosial. Anda cukup memberikan teks kasus dan memilih metode analisisnya."
+      answer: "Gunakan fitur ini untuk menerapkan kerangka kerja teoretis (seperti SWOT, PESTLE, atau Porter's Five Forces) pada sebuah skenario bisnis atau sosial. Anda cukup memberikan teks kasus dan memilih metode analisisnya."
     },
     {
       question: "Apa itu 'Workspace Karya Ilmiah' dan 'Sintesis Teori'?",
-      answer: "<strong>Workspace Karya Ilmiah</strong> memberikan bimbingan terstruktur untuk tahapan awal penulisan akademis, seperti membantu merumuskan judul, membuat draf abstrak, atau menyusun kerangka. <br><strong>Sintesis Teori</strong> memungkinkan Anda menganalisis satu fenomena atau studi kasus dari berbagai 'kacamata' teori yang berbeda, lalu membandingkan hasilnya."
+      answer: "<strong>Workspace Karya Ilmiah</strong> memberikan bimbingan terstruktur untuk tahapan awal penulisan akademis, seperti membantu merumuskan judul atau membuat draf abstrak. <br><strong>Sintesis Teori</strong> memungkinkan Anda menganalisis satu fenomena dari berbagai 'kacamata' teori yang berbeda, lalu membandingkan hasilnya."
     },
      {
         question: "Bagaimana 'Latihan Ujian Akhir' dan 'Prediksi Nilai UAS' membantu saya?",
-        answer: "<strong>Latihan Ujian Akhir</strong> menghasilkan paket persiapan lengkap (ringkasan komprehensif, poin-poin kunci, dan soal latihan) dari semua materi yang Anda berikan untuk satu mata kuliah. <br><strong>Prediksi Nilai UAS</strong> adalah kalkulator untuk menghitung skor UAS minimum yang Anda butuhkan untuk mencapai target nilai akhir, lengkap dengan saran belajar personal dari ABM-UT."
+        answer: "<strong>Latihan Ujian Akhir</strong> menghasilkan paket persiapan lengkap (ringkasan, poin kunci, soal latihan) dari semua materi yang Anda berikan untuk satu mata kuliah. <br><strong>Prediksi Nilai UAS</strong> adalah kalkulator untuk menghitung skor UAS minimum yang Anda butuhkan, lengkap dengan saran belajar personal dari ABM-UT."
     }
   ],
   "Tutorial Online (Tuton)": [
     {
         question: "Apa perbedaan 'Pemahaman Materi' dan 'Pemahaman Diskusi'?",
-        answer: "<strong>Pemahaman Materi</strong> digunakan di awal setiap sesi Tuton. Anda mengunggah semua materi (inisiasi, pengayaan, BMP), dan ABM-UT akan membuat satu ringkasan komprehensif. <br><strong>Pemahaman Diskusi</strong> digunakan untuk mengatasi tugas diskusi. ABM-UT akan membuat draf jawaban awal, kemudian memandu Anda melalui sesi tanya jawab untuk memperdalam pemahaman sebelum menghasilkan jawaban akhir yang disintesis."
+        answer: "<strong>Pemahaman Materi</strong> digunakan di awal sesi Tuton. Anda mengunggah semua materi (inisiasi, pengayaan, BMP), dan ABM-UT membuat satu ringkasan komprehensif. <br><strong>Pemahaman Diskusi</strong> digunakan untuk tugas diskusi. ABM-UT membuat draf jawaban awal, lalu memandu Anda melalui sesi tanya jawab untuk memperdalam pemahaman sebelum menghasilkan jawaban akhir yang disintesis."
     },
      {
         question: "Bagaimana cara menggunakan 'Asisten BMP'?",
-        answer: "Fitur ini memungkinkan Anda untuk 'berbicara' langsung dengan Buku Materi Pokok (BMP) Anda. Unggah file BMP dalam format PDF, dan Anda bisa bertanya apa pun tentang isinya. ABM-UT akan menjawab pertanyaan secara spesifik berdasarkan konten dari file yang Anda unggah, seolah-olah Anda memiliki ahli materi pribadi."
+        answer: "Fitur ini memungkinkan Anda untuk 'berbicara' langsung dengan Buku Materi Pokok (BMP) Anda. Unggah file BMP (PDF), dan Anda bisa bertanya apa pun tentang isinya. ABM-UT akan menjawab secara spesifik berdasarkan konten dari file yang Anda unggah."
     }
   ],
   "Pelacakan & Pengaturan": [
     {
-      question: "Apa fungsi 'Riwayat Belajar' dan 'Folder Mata Kuliah'?",
-      answer: "<strong>Riwayat Belajar</strong> secara otomatis menyimpan semua sesi interaktif Anda (seperti Diskusi, Debat, Feynman) agar bisa dilanjutkan atau diunduh nanti. <br><strong>Folder Mata Kuliah</strong> memungkinkan Anda mengelompokkan riwayat-riwayat tersebut berdasarkan mata kuliah yang Anda lacak, menjadikannya lebih terorganisir."
+      question: "Apa fungsi 'Riwayat Belajar' dan berbagai jenis 'Folder'?",
+      answer: "<strong>Riwayat Belajar</strong> menyimpan semua sesi interaktif Anda agar bisa dilanjutkan atau diunduh. Halaman ini juga menampilkan <strong>visualisasi data</strong> aktivitas Anda. <br><strong>Folder Mata Kuliah</strong> secara otomatis mengelompokkan riwayat berdasarkan mata kuliah yang Anda lacak. <br><strong>Folder Pribadi</strong> memungkinkan Anda membuat kategori kustom untuk mengorganisir riwayat sesuai keinginan Anda."
     },
      {
       question: "Apa itu 'Instruksi Sistem' di Pengaturan Lanjutan?",
-      answer: "Fitur ini memungkinkan Anda untuk memberikan instruksi permanen yang akan memengaruhi semua respons ABM-UT di seluruh aplikasi. Misalnya, Anda bisa menginstruksikannya untuk 'selalu menjawab dalam bahasa Inggris formal' atau 'bertindak sebagai seorang peneliti yang skeptis'. Ini adalah cara canggih untuk mengkustomisasi perilaku AI sesuai preferensi Anda."
+      answer: "Fitur ini memungkinkan Anda untuk memberikan instruksi permanen yang akan memengaruhi semua respons ABM-UT di seluruh aplikasi. Misalnya, Anda bisa menginstruksikannya untuk 'selalu menjawab dalam bahasa Inggris formal' atau 'bertindak sebagai seorang peneliti yang skeptis'. Ini adalah cara canggih untuk mengkustomisasi perilaku ABM-UT."
     },
     {
       question: "Apa fungsi 'Reset Aplikasi'?",
@@ -158,7 +150,7 @@ export const FaqPage: React.FC<FaqPageProps> = ({ setActiveView, studentData }) 
                     <h2 className="text-2xl font-semibold text-white font-display mb-4 border-b-2 border-gray-700 pb-2">{category}</h2>
                     <div className="space-y-4">
                         {faqs.map((faq, index) => (
-                             <FaqItem key={index} question={faq.question} answer={faq.answer} />
+                            <FaqItem key={index} question={faq.question} answer={faq.answer} />
                         ))}
                     </div>
                 </div>

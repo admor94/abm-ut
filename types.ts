@@ -1,5 +1,4 @@
 
-
 export interface StudentData {
   name: string;
   faculty: string;
@@ -123,6 +122,11 @@ export interface GroupProjectSummary {
 
 export type AppView =
   | 'Dashboard'
+  // FIX: Add hub page parent views to resolve type errors
+  | 'Belajar & Latihan'
+  | 'Produktivitas & Riset'
+  | 'Riwayat & Pelacakan'
+  | 'Pengaturan & Bantuan'
   | 'Kreativitas'
   | 'Interaktif'
   | 'Alat Bantu'
@@ -161,11 +165,13 @@ export type AppView =
   | 'Pemahaman Materi'
   | 'Pemahaman Diskusi'
   | 'Asisten BMP'
+  | 'Eksperimental'
   // Seputar UT
   | 'Kalender Akademik'
   | 'Informasi UT Daerah'
   | 'Informasi & Layanan UT'
   | 'Panduan Lengkap UT'
+  | 'Referensi Akademik'
   // Tracking & Informasi
   | 'Riwayat Belajar Mahasiswa'
   | 'Lacak Pengingat'

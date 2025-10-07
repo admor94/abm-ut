@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { AppView, StudentData, ChatMessage, LearningHistoryEntry, PersonalFolder } from './types';
 import { HUB_PAGES_DATA } from './constants';
@@ -37,7 +37,7 @@ import { StudyPlanPlusPage } from './pages/StudyPlanPlusPage';
 import { LoginPage } from './pages/LoginPage';
 import { PemahamanMateriPage } from './pages/PemahamanMateriPage';
 import { PemahamanDiskusiPage } from './pages/PemahamanDiskusiPage';
-import { initializeAi } from './services/geminiService';
+import { initializeAi, createPeranPrompt } from './services/geminiService';
 import { ApiIntegrationPage } from './pages/ApiIntegrationPage';
 import { ResetAppPage } from './pages/ResetAppPage';
 import { CourseFolderPage } from './pages/CourseFolderPage';
@@ -45,12 +45,14 @@ import { PersonalFolderPage } from './pages/PersonalFolderPage';
 import { AsistenBmpPage } from './pages/AsistenBmpPage';
 import { PrediksiNilaiPage } from './pages/PrediksiNilaiPage';
 import { GroupStudyWorkspacePage } from './pages/GroupStudyWorkspacePage';
-import { SessionTimerBar } from './components/SessionTimerBar';
+import { SessionStatusIcon } from './components/SessionTimerBar';
 import { ApiIntegrationGuidePage } from './pages/ApiIntegrationGuidePage';
 import { PreLoginInfoPage } from './pages/PreLoginInfoPage';
 import { PanduanUtPage } from './pages/PanduanUtPage';
 import { AdvancedSettingsPage } from './pages/AdvancedSettingsPage';
+import { EksperimentalPage } from './pages/EksperimentalPage';
 import { isApiKeyFeatureEnabled } from './featureFlags';
+import { ReferensiAkademikPage } from './pages/ReferensiAkademikPage';
 
 
 const CHAT_SYSTEM_PROMPTS: Record<string, { description: string; prompt: string }> = {
@@ -88,6 +90,7 @@ const PRO_FEATURES: AppView[] = [
     'Parafrasa & Gaya Bahasa',
     'Perancang Argumen',
     'Asisten Sitasi',
+    'Eksperimental',
 ];
 
 const FeatureLockPrompt: React.FC<{ setActiveView: (view: AppView) => void }> = ({ setActiveView }) => {
@@ -119,6 +122,25 @@ const FeatureLockPrompt: React.FC<{ setActiveView: (view: AppView) => void }> = 
     );
 };
 
+const ExclusiveFeaturePrompt: React.FC<{ setActiveView: (view: AppView) => void; featureName: string; }> = ({ setActiveView, featureName }) => (
+    <section className="min-h-screen w-full flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-2xl text-center">
+            <div className="bg-slate-800/60 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-ut-yellow/50">
+                <h2 className="text-3xl font-bold text-white font-display mb-4">Fitur Eksklusif</h2>
+                <p className="text-slate-300 mb-6">
+                    Fitur "{featureName}" hanya tersedia untuk pengguna dengan akses khusus (Developer & Pengguna Eksklusif).
+                </p>
+                <button
+                    onClick={() => setActiveView('Dashboard')}
+                    className="px-6 py-3 bg-slate-600 hover:bg-slate-500 rounded-lg font-semibold transition-colors"
+                >
+                    Kembali ke Dashboard
+                </button>
+            </div>
+        </div>
+    </section>
+);
+
 
 const App: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -135,6 +157,12 @@ const App: React.FC = () => {
     const [usedInviteCode, setUsedInviteCode] = useState<string | null>(null);
     const [scrollProgress, setScrollProgress] = useState(0);
     const [sessionResetTimestamp, setSessionResetTimestamp] = useState<number | null>(null);
+
+    // New states for session end warning
+    const [showSessionEndWarning, setShowSessionEndWarning] = useState(false);
+    const warningTimerRef = useRef<number | null>(null);
+    const logoutTimerRef = useRef<number | null>(null);
+
 
     // Scroll progress bar logic
     useEffect(() => {
@@ -185,8 +213,11 @@ const App: React.FC = () => {
             }
 
             const savedStudentData = localStorage.getItem('studentData');
-            // For invite mode, history is not persisted across reloads.
-            if (savedLoginMethod === 'apiKey' || (savedLoginMethod === 'invite' && localStorage.getItem('usedInviteCode') === 'RADINALLSHARE')) {
+            const savedInviteCodeOnLoad = localStorage.getItem('usedInviteCode');
+            const isProInviteUser = savedInviteCodeOnLoad === 'RADINALLSHARE' || savedInviteCodeOnLoad === 'ADMOR94';
+
+            // For invite mode, history is not persisted across reloads, unless it's a pro user.
+            if (savedLoginMethod === 'apiKey' || (savedLoginMethod === 'invite' && isProInviteUser)) {
                 const savedHistory = localStorage.getItem('learningHistory');
                  if (savedHistory) {
                     setLearningHistory(JSON.parse(savedHistory));
@@ -203,10 +234,11 @@ const App: React.FC = () => {
                 if (parsedData.studyTimeStart && parsedData.studyTimeEnd) {
                     const [endH, endM] = parsedData.studyTimeEnd.split(':').map(Number);
                     const now = new Date();
-                    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endH, endM);
-                    if (end.getTime() > now.getTime()) {
-                       setStudyEndTime(end.getTime());
+                    let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endH, endM);
+                    if (end.getTime() < now.getTime()) {
+                       end.setDate(end.getDate() + 1);
                     }
+                    setStudyEndTime(end.getTime());
                 }
             }
         } catch (error) {
@@ -226,9 +258,8 @@ const App: React.FC = () => {
                 localStorage.removeItem('isLoggedIn');
                 localStorage.removeItem('loginMethod');
                 localStorage.removeItem('geminiApiKey');
-                localStorage.removeItem('sessionExpiry');
-                localStorage.removeItem('usedInviteCode');
-                localStorage.removeItem('sessionResetTimestamp');
+                // Do NOT remove sessionExpiry, usedInviteCode, or sessionResetTimestamp on logout
+                // so the user can log back in.
             }
             if (studentData) {
                 localStorage.setItem('studentData', JSON.stringify(studentData));
@@ -242,8 +273,9 @@ const App: React.FC = () => {
 
     useEffect(() => {
         try {
-            // Only save history if in apiKey mode or dev mode
-            if(loginMethod === 'apiKey' || (loginMethod === 'invite' && usedInviteCode === 'RADINALLSHARE')) {
+            const isProInviteUser = usedInviteCode === 'RADINALLSHARE' || usedInviteCode === 'ADMOR94';
+            // Only save history if in apiKey mode or pro invite mode
+            if(loginMethod === 'apiKey' || (loginMethod === 'invite' && isProInviteUser)) {
                 localStorage.setItem('learningHistory', JSON.stringify(learningHistory));
                 localStorage.setItem('personalFolders', JSON.stringify(personalFolders));
             }
@@ -253,6 +285,59 @@ const App: React.FC = () => {
     }, [learningHistory, personalFolders, loginMethod, usedInviteCode]);
 
     useEffect(() => { window.scrollTo(0, 0); }, [activeView]);
+    
+    // Auto-logout without confirmation
+    const handleForceLogout = useCallback(() => {
+        localStorage.removeItem('isLoggedIn');
+        window.location.reload();
+    }, []);
+
+    const handleLogout = useCallback(() => {
+        // Per user request, the confirmation dialog is removed for immediate logout.
+        if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+        if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+        handleForceLogout();
+    }, [handleForceLogout]);
+
+    // Timer setup effect for session end warning
+    useEffect(() => {
+        // Always clear previous timers
+        if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+        if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+
+        if (isLoggedIn && studentData && studyEndTime) {
+            const now = Date.now();
+            const twoMinutesInMs = 2 * 60 * 1000;
+            const warningTimestamp = studyEndTime - twoMinutesInMs;
+            
+            // Schedule the warning modal
+            if (warningTimestamp > now) {
+                warningTimerRef.current = setTimeout(() => {
+                    setShowSessionEndWarning(true);
+                }, warningTimestamp - now) as unknown as number;
+            }
+
+            // Schedule the final auto-logout
+            if (studyEndTime > now) {
+                logoutTimerRef.current = setTimeout(() => {
+                    handleForceLogout();
+                }, studyEndTime - now) as unknown as number;
+            }
+        }
+
+        // Cleanup on unmount
+        return () => {
+            if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+            if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+        };
+    }, [isLoggedIn, studentData, studyEndTime, handleForceLogout]);
+
+    const handleExtendSession = (minutes: number) => {
+        const newEndTime = (studyEndTime || Date.now()) + minutes * 60 * 1000;
+        setStudyEndTime(newEndTime);
+        setShowSessionEndWarning(false);
+        // The useEffect will automatically clear old timers and set new ones.
+    };
 
     const handleLoginSuccess = (method: 'invite' | 'apiKey', value: string, durationMs?: number, resetTimestamp?: number) => {
         if (method === 'apiKey' && value && isApiKeyFeatureEnabled) {
@@ -270,39 +355,57 @@ const App: React.FC = () => {
             localStorage.removeItem('geminiApiKey');
             initializeAi(null, 'invite');
             setLoginMethod('invite');
+
+            const isProInviteUser = upperCaseValue === 'RADINALLSHARE' || upperCaseValue === 'ADMOR94';
             
             if (upperCaseValue === 'RADINALLSHARE') {
-                const devData: StudentData = {
-                    name: 'ABM-UT Developer',
-                    faculty: 'Fakultas Sains dan Teknologi (FST)',
-                    studyProgram: 'Sistem Informasi',
+                const radinalData: StudentData = {
+                    name: 'Radinal Simamora',
+                    faculty: 'Fakultas Hukum Ilmu Sosial dan Ilmu Politik (FHISIP)',
+                    studyProgram: 'Sosiologi',
                     semester: 8,
-                    isWorking: true,
+                    isWorking: false,
                     studySituation: 'Malam',
-                    studyTimeStart: '19:00',
-                    studyTimeEnd: '23:00',
+                    studyTimeStart: '23:00',
+                    studyTimeEnd: '03:00',
                     studyDuration: 4 * 60 * 60 * 1000,
                 };
-                setStudentData(devData);
-                setSessionExpiry(null); // Unlimited
-                localStorage.removeItem('sessionExpiry');
+                setStudentData(radinalData);
+                
+                // Also set study end time
+                const [endH, endM] = radinalData.studyTimeEnd.split(':').map(Number);
+                const now = new Date();
+                let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endH, endM);
+                if (end < now) { end.setDate(end.getDate() + 1); } // Handle next day
+                setStudyEndTime(end.getTime());
+            }
+
+            if (isProInviteUser) {
+                 // Logic for all pro invite users (RADINALLSHARE, ADMOR94)
+                 if (durationMs === -1) { // Unlimited
+                    setSessionExpiry(null);
+                    localStorage.removeItem('sessionExpiry');
+                } else if (durationMs) { // Timed Pro (ADMOR94)
+                    const expiryTime = Date.now() + durationMs;
+                    setSessionExpiry(expiryTime);
+                    localStorage.setItem('sessionExpiry', String(expiryTime));
+                }
                 localStorage.removeItem('sessionResetTimestamp');
                 setSessionResetTimestamp(null);
-                setUsedInviteCode(upperCaseValue);
-                localStorage.setItem('usedInviteCode', upperCaseValue);
-                 // Persist history for dev
+                
+                // Persist/load history for pro invite users
                 const savedHistory = localStorage.getItem('learningHistory');
                 if (savedHistory) {
                    setLearningHistory(JSON.parse(savedHistory));
                 }
+                 const savedFolders = localStorage.getItem('personalFolders');
+                if (savedFolders) {
+                    setPersonalFolders(JSON.parse(savedFolders));
+                }
 
             } else {
-                 if (durationMs === -1) { // Unlimited
-                    setSessionExpiry(null);
-                    localStorage.removeItem('sessionExpiry');
-                    localStorage.removeItem('sessionResetTimestamp');
-                    setSessionResetTimestamp(null);
-                } else if (durationMs && durationMs > 0) { // Fresh, timed session
+                 // Logic for regular, timed invite codes
+                 if (durationMs && durationMs > 0) { // Fresh, timed session
                     const expiryTime = Date.now() + durationMs;
                     setSessionExpiry(expiryTime);
                     localStorage.setItem('sessionExpiry', String(expiryTime));
@@ -317,13 +420,15 @@ const App: React.FC = () => {
                     }
                 }
                 
-                setUsedInviteCode(upperCaseValue);
-                localStorage.setItem('usedInviteCode', upperCaseValue);
-                
                 // Clear any previous history from PRO mode
                 setLearningHistory([]);
                 localStorage.removeItem('learningHistory');
+                setPersonalFolders([]);
+                localStorage.removeItem('personalFolders');
             }
+
+            setUsedInviteCode(upperCaseValue);
+            localStorage.setItem('usedInviteCode', upperCaseValue);
         }
         setIsLoggedIn(true);
     };
@@ -422,16 +527,16 @@ const App: React.FC = () => {
     const hubPageKeys = Object.keys(HUB_PAGES_DATA) as AppView[];
 
     const renderView = () => {
-        const informationalViews: AppView[] = [ 'Informasi', 'FAQ', 'Dokumentasi Pembaruan', 'Tentang Aplikasi', 'Kalender Akademik', 'Informasi UT Daerah', 'Informasi & Layanan UT', 'Integrasi API', 'Panduan Integrasi API', 'Reset Aplikasi', 'Pengaturan', 'Panduan Lengkap UT', 'Pengaturan Lanjutan' ];
+        const informationalViews: AppView[] = [ 'Pengaturan & Bantuan', 'FAQ', 'Dokumentasi Pembaruan', 'Tentang Aplikasi', 'Kalender Akademik', 'Informasi UT Daerah', 'Informasi & Layanan UT', 'Referensi Akademik', 'Integrasi API', 'Panduan Integrasi API', 'Reset Aplikasi', 'Pengaturan', 'Panduan Lengkap UT', 'Pengaturan Lanjutan' ];
         const isInformationalView = informationalViews.includes(activeView);
 
-        if (isLocked && !isInformationalView && activeView !== 'Dashboard' && activeView !== 'Tracking' && activeView !== 'Riwayat Belajar Mahasiswa' && activeView !== 'Lacak Pengingat') {
+        if (isLocked && !isInformationalView && activeView !== 'Dashboard' && activeView !== 'Riwayat & Pelacakan' && activeView !== 'Riwayat Belajar Mahasiswa' && activeView !== 'Lacak Pengingat') {
             setActiveView('Dashboard');
-            return <Dashboard studentData={null} onProfileSubmit={handleProfileSubmit} setActiveView={setActiveView} studyEndTime={null} />;
+            return <Dashboard studentData={null} onProfileSubmit={handleProfileSubmit} setActiveView={setActiveView} studyEndTime={null} onLogout={handleLogout} />;
         }
         
         const isProFeature = PRO_FEATURES.includes(activeView);
-        const isTrialExpired = loginMethod === 'invite' && usedInviteCode !== 'RADINALLSHARE' && sessionExpiry != null && Date.now() >= sessionExpiry;
+        const isTrialExpired = loginMethod === 'invite' && usedInviteCode !== 'RADINALLSHARE' && usedInviteCode !== 'ADMOR94' && sessionExpiry != null && Date.now() >= sessionExpiry;
 
         if (isProFeature && isTrialExpired) {
             return <FeatureLockPrompt setActiveView={setActiveView} />;
@@ -449,7 +554,7 @@ const App: React.FC = () => {
 
         switch (activeView) {
             case 'Dashboard':
-                return <Dashboard studentData={studentData} onProfileSubmit={handleProfileSubmit} setActiveView={setActiveView} studyEndTime={studyEndTime} />;
+                return <Dashboard studentData={studentData} onProfileSubmit={handleProfileSubmit} setActiveView={setActiveView} studyEndTime={studyEndTime} onLogout={handleLogout} />;
             case 'Rencana Belajar':
                 return <StudyPlanPage studentData={studentData} setActiveView={setActiveView} />;
             case 'Rencana Belajar +Plus':
@@ -494,6 +599,12 @@ const App: React.FC = () => {
                 return <PemahamanDiskusiPage studentData={studentData} setActiveView={setActiveView} onSessionComplete={addLearningHistory} initialData={initialSessionData?.view === activeView ? initialSessionData : undefined} />;
             case 'Asisten BMP':
                 return <AsistenBmpPage studentData={studentData} setActiveView={setActiveView} onSessionComplete={addLearningHistory} initialData={initialSessionData?.view === activeView ? initialSessionData : undefined} />;
+            case 'Eksperimental':
+                const isAllowedExperimental = usedInviteCode === 'RADINALLSHARE' || usedInviteCode === 'ADMOR94';
+                if (!isAllowedExperimental) {
+                    return <ExclusiveFeaturePrompt setActiveView={setActiveView} featureName="Eksperimental" />;
+                }
+                return <EksperimentalPage studentData={studentData} setActiveView={setActiveView} />;
             case 'Kalender Akademik':
                 return <AcademicCalendarPage setActiveView={setActiveView} />;
             case 'Informasi UT Daerah':
@@ -502,6 +613,8 @@ const App: React.FC = () => {
                 return <InformasiLayananUtPage setActiveView={setActiveView} />;
             case 'Panduan Lengkap UT':
                 return <PanduanUtPage setActiveView={setActiveView} />;
+            case 'Referensi Akademik':
+                return <ReferensiAkademikPage setActiveView={setActiveView} />;
             case 'Riwayat Belajar Mahasiswa':
                  return <LearningHistory history={learningHistory} setActiveView={setActiveView} studentData={studentData} onDelete={deleteHistoryEntry} onContinue={handleContinueSession} folders={personalFolders} onAssignHistoryToFolder={handleAssignHistoryToFolder} />;
             case 'Lacak Pengingat':
@@ -535,13 +648,26 @@ const App: React.FC = () => {
             default:
                 if (CHAT_SYSTEM_PROMPTS[activeView]) {
                     const isContinuing = initialSessionData?.view === activeView;
+                    let systemPromptToUse: string;
+
+                    if (!isContinuing && studentData && (activeView === 'Diskusi dengan ABM-UT' || activeView === 'Konsultasi Belajar ABM-UT')) {
+                        const specificTask = `
+                        Sapa mahasiswa (${studentData.name}) dengan ramah dan tanyakan apa yang ingin mereka diskusikan atau konsultasikan hari ini.
+                        Untuk 'Diskusi dengan ABM-UT', posisikan diri sebagai teman bicara yang cerdas.
+                        Untuk 'Konsultasi Belajar ABM-UT', posisikan diri sebagai mentor yang lebih profesional dan fokus pada strategi belajar.
+                        `;
+                        systemPromptToUse = createPeranPrompt(studentData, undefined, specificTask);
+                    } else {
+                        systemPromptToUse = isContinuing ? initialSessionData.systemPrompt : CHAT_SYSTEM_PROMPTS[activeView].prompt;
+                    }
+
                     return (
                         <GenericChatPage
                             id={activeView}
                             studentData={studentData}
                             pageTitle={isContinuing ? initialSessionData.topic : activeView}
                             pageDescription={CHAT_SYSTEM_PROMPTS[activeView].description}
-                            systemPrompt={isContinuing ? initialSessionData.systemPrompt : CHAT_SYSTEM_PROMPTS[activeView].prompt}
+                            systemPrompt={systemPromptToUse}
                             onSessionComplete={addLearningHistory}
                             setActiveView={setActiveView}
                             initialConversation={isContinuing ? initialSessionData.conversation : undefined}
@@ -549,12 +675,34 @@ const App: React.FC = () => {
                         />
                     );
                 }
-                return <Dashboard studentData={studentData} onProfileSubmit={handleProfileSubmit} setActiveView={setActiveView} studyEndTime={studyEndTime} />;
+                return <Dashboard studentData={studentData} onProfileSubmit={handleProfileSubmit} setActiveView={setActiveView} studyEndTime={studyEndTime} onLogout={handleLogout} />;
         }
     };
 
     return (
         <div className="bg-transparent text-white min-h-screen font-sans">
+             {showSessionEndWarning && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100]" role="dialog" aria-modal="true">
+                    <div className="bg-slate-800 p-8 rounded-lg shadow-xl max-w-lg w-full border border-ut-red/50 text-center">
+                        <h3 className="text-2xl font-bold font-display text-ut-yellow mb-4">Waktu Sesi Belajar Akan Berakhir</h3>
+                        <p className="text-slate-300 mb-6">Waktu estimasi belajar Anda akan berakhir dalam 2 menit. Apakah Anda ingin menambah durasi sesi?</p>
+                        <div className="flex justify-center gap-4">
+                            <button
+                                onClick={() => handleExtendSession(30)}
+                                className="px-6 py-3 bg-ut-green hover:bg-green-500 rounded-lg font-semibold transition-colors"
+                            >
+                                Tambah 30 Menit
+                            </button>
+                            <button
+                                onClick={handleForceLogout}
+                                className="px-6 py-3 bg-ut-red hover:bg-red-700 rounded-lg font-semibold transition-colors"
+                            >
+                                Selesaikan & Keluar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div id="scroll-progress-bar">
                 <div id="scroll-progress-bar-indicator" style={{ width: `${scrollProgress}%` }}></div>
             </div>
@@ -563,21 +711,28 @@ const App: React.FC = () => {
                     activeView={activeView} 
                     setActiveView={setActiveView} 
                     isLocked={isLocked}
+                    usedInviteCode={usedInviteCode}
                 />
                 <main className="flex-1 md:ml-64 transition-all duration-300 w-full md:w-auto flex flex-col pb-36 md:pb-0">
                     <MobileHeader />
+                     {isLoggedIn && studentData && (
+                        <SessionStatusIcon
+                            loginMethod={loginMethod}
+                            expiryTimestamp={sessionExpiry}
+                            resetTimestamp={sessionResetTimestamp}
+                            inviteCode={usedInviteCode}
+                        />
+                    )}
                     <div className="view-container flex-grow">
                        {renderView()}
                     </div>
                     <Footer />
                 </main>
-                {loginMethod === 'invite' && (sessionExpiry || sessionResetTimestamp) && (
-                    <SessionTimerBar expiryTimestamp={sessionExpiry} resetTimestamp={sessionResetTimestamp} inviteCode={usedInviteCode!} />
-                )}
                 <BottomNav 
                     activeView={activeView}
                     setActiveView={setActiveView}
                     isLocked={isLocked}
+                    usedInviteCode={usedInviteCode}
                 />
             </div>
         </div>

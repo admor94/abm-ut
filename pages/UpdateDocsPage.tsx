@@ -23,13 +23,43 @@ interface Update {
 
 const updates: Update[] = [
     {
+        version: "v2.0.0",
+        date: "07 Oktober 2025",
+        title: "Saran Cerdas, Visualisasi Data & Peningkatan Konsistensi",
+        changes: {
+            newFeatures: [
+                "<strong>Saran Belajar Otomatis:</strong> Fitur 'Rencana Belajar +Plus' kini secara cerdas memberikan saran belajar yang dipersonalisasi setelah rencana dibuat.",
+                "<strong>Visualisasi Riwayat Belajar:</strong> Halaman 'Riwayat Belajar Mahasiswa' sekarang menampilkan diagram batang interaktif, memvisualisasikan frekuensi penggunaan setiap fitur.",
+            ],
+            improvements: [
+                "<strong>Konsistensi Merek:</strong> Mengganti semua sebutan 'AI' yang merujuk pada asisten menjadi 'ABM-UT' di seluruh antarmuka aplikasi untuk branding yang lebih kuat.",
+                "<strong>Pembaruan FAQ & Dokumentasi:</strong> Merombak total halaman FAQ dan menambahkan dokumentasi pembaruan ini untuk mencerminkan semua fitur terbaru."
+            ]
+        }
+    },
+    {
+        version: "v1.9.5",
+        date: "06 Oktober 2025",
+        title: "Akses Fitur Eksklusif & Peningkatan UI",
+        changes: {
+            newFeatures: [
+                "Fitur 'Eksperimental' kini menjadi fitur eksklusif, hanya dapat diakses oleh pengguna dengan kode invite `RADINALLSHARE` dan `ADMOR94`.",
+                "Menu 'Eksperimental' sekarang memiliki efek animasi menyala yang khas untuk membedakannya dari fitur lain."
+            ],
+            improvements: [
+                "Durasi akses untuk kode `ADMOR94` diperpanjang secara signifikan menjadi 120 hari.",
+                "Riwayat belajar kini disimpan secara permanen untuk pengguna dengan kode `ADMOR94`, sama seperti pengguna dengan Kunci API pribadi."
+            ]
+        }
+    },
+    {
         version: "v1.9.0",
         date: "06 Oktober 2025",
-        title: "Kustomisasi AI & Keamanan",
+        title: "Kustomisasi ABM-UT & Keamanan",
         changes: {
             newFeatures: [
                 "Meluncurkan halaman <strong>Pengaturan Lanjutan</strong> yang dapat diakses dari menu Pengaturan.",
-                "Menambahkan fitur <strong>Instruksi Sistem Global</strong>, memungkinkan pengguna untuk mengkustomisasi perilaku dan gaya respons AI di seluruh aplikasi.",
+                "Menambahkan fitur <strong>Instruksi Sistem Global</strong>, memungkinkan pengguna untuk mengkustomisasi perilaku dan gaya respons ABM-UT di seluruh aplikasi.",
                 "Menambahkan templat instruksi siap pakai (Tutor Sokratik, Editor Profesional, dll.) untuk memulai."
             ],
             improvements: [
@@ -65,7 +95,7 @@ const updates: Update[] = [
             newFeatures: [
                 'Meluncurkan fitur <strong>Sintesis Teori</strong> untuk menganalisis studi kasus menggunakan berbagai "kacamata" teoretis.',
                 'Menambahkan fitur <strong>Persiapan Ujian Akhir</strong>, alat "semua dalam satu" untuk menghasilkan paket belajar komprehensif dari materi satu semester.',
-                "Menambahkan fitur <strong>Prediksi Nilai UAS</strong>, sebuah kalkulator untuk menghitung skor UAS minimum yang dibutuhkan, lengkap dengan saran belajar personal dari AI."
+                "Menambahkan fitur <strong>Prediksi Nilai UAS</strong>, sebuah kalkulator untuk menghitung skor UAS minimum yang dibutuhkan, lengkap dengan saran belajar personal dari ABM-UT."
             ],
             improvements: [
                 'Memperbarui halaman "Tentang Aplikasi" dengan penjelasan mendalam mengenai teknologi Google Gemini yang digunakan.'
@@ -117,9 +147,9 @@ const updates: Update[] = [
         title: "Ekspansi Fitur Interaktif",
         changes: {
             newFeatures: [
-                'Menambahkan mode interaktif <strong>Debat Cerdas</strong>, di mana mahasiswa dapat berdebat melawan berbagai persona AI yang menantang.',
-                'Menambahkan mode interaktif <strong>Teknik Feynman</strong>, di mana mahasiswa menyederhanakan konsep sulit dengan "mengajari" AI yang berperan sebagai murid awam.',
-                'Menambahkan fitur <strong>Ruang Kerja Kelompok Belajar</strong> untuk mensimulasikan sesi diskusi kelompok dengan AI sebagai fasilitator.'
+                'Menambahkan mode interaktif <strong>Debat Cerdas</strong>, di mana mahasiswa dapat berdebat melawan berbagai persona ABM-UT yang menantang.',
+                'Menambahkan mode interaktif <strong>Teknik Feynman</strong>, di mana mahasiswa menyederhanakan konsep sulit dengan "mengajari" ABM-UT yang berperan sebagai murid awam.',
+                'Menambahkan fitur <strong>Ruang Kerja Kelompok Belajar</strong> untuk mensimulasikan sesi diskusi kelompok dengan ABM-UT sebagai fasilitator.'
             ]
         }
     },
@@ -130,7 +160,7 @@ const updates: Update[] = [
         changes: {
             newFeatures: [
                 'Memperkenalkan fitur <strong>Flashcards</strong> yang dapat dibuat secara otomatis dari materi yang diberikan.',
-                'Menambahkan fitur <strong>Kuis Pilihan Ganda</strong> yang juga dibuat otomatis oleh AI dari materi perkuliahan.'
+                'Menambahkan fitur <strong>Kuis Pilihan Ganda</strong> yang juga dibuat otomatis oleh ABM-UT dari materi perkuliahan.'
             ],
         }
     },

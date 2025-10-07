@@ -5,6 +5,14 @@
 import { GoogleGenAI } from "@google/genai";
 import type { GenerateContentParameters } from "@google/genai";
 
+// In-memory store for rate limiting. NOTE: This is ephemeral and will reset if the
+// serverless function instance is recycled. For a short 15-minute window, this is
+// often sufficient on platforms like Vercel that keep functions warm.
+const requestTimestamps: number[] = [];
+const RATE_LIMIT_COUNT = 45;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+
+
 export default async function handler(request: Request): Promise<Response> {
     if (request.method !== 'POST') {
         return new Response(JSON.stringify({ error: 'Method not allowed.' }), { 
@@ -12,6 +20,29 @@ export default async function handler(request: Request): Promise<Response> {
             headers: { 'Content-Type': 'application/json' } 
         });
     }
+
+    // --- Rate Limiting Logic (First-Come, First-Served) ---
+    const now = Date.now();
+
+    // 1. Remove timestamps older than the 15-minute window to keep the array clean.
+    // This is efficient as timestamps are added in chronological order.
+    while (requestTimestamps.length > 0 && now - requestTimestamps[0] > RATE_LIMIT_WINDOW_MS) {
+        requestTimestamps.shift();
+    }
+
+    // 2. Check if the current number of requests within the window exceeds the limit.
+    if (requestTimestamps.length >= RATE_LIMIT_COUNT) {
+        return new Response(JSON.stringify({
+            error: "Wow, Ramai Sekali!\n\nAntusiasme Anda luar biasa! Saat ini server kami sedang ramai. Untuk menjaga semuanya tetap lancar, kami menyediakan 45 'kursi' setiap 15 menit untuk pengguna undangan.\n\nMohon tunggu sebentar dan coba akses kembali dalam beberapa menit ya. Terima kasih!"
+        }), {
+            status: 429, // Too Many Requests
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+
+    // 3. If the limit is not reached, record the current request's timestamp.
+    requestTimestamps.push(now);
+    // --- End of Rate Limiting Logic ---
 
     // IMPORTANT: Use process.env.API_KEY as per guidelines
     const apiKey = process.env.API_KEY;
