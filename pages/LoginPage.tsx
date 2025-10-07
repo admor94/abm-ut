@@ -1,11 +1,67 @@
 import React, { useState } from 'react';
 import { Logo } from '../components/Logo';
 import { isApiKeyFeatureEnabled } from '../featureFlags';
+import { INVITE_CODES } from '../constants';
 
 interface LoginPageProps {
   onLoginSuccess: (method: 'invite' | 'apiKey', value: string, durationMs?: number, resetTimestamp?: number) => void;
   onShowInfo: () => void;
 }
+
+// Client-side validation function to replace server call
+const validateInviteCode = async (code: string, userId: string): Promise<{ status: 'valid' | 'reused' | 'invalid', durationMs?: number, resetTimestamp?: number, error?: string }> => {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Special developer code
+    if (code === 'RADINALLSHARE') {
+        return { status: 'valid', durationMs: -1 };
+    }
+
+    const codeDetails = INVITE_CODES.find(c => c.code === code);
+    if (!codeDetails) {
+        return { status: 'invalid', error: 'Kode invite tidak valid atau sudah digunakan.' };
+    }
+
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+    try {
+        const usedCodesRaw = localStorage.getItem('abmut_used_codes');
+        const usedCodes = usedCodesRaw ? JSON.parse(usedCodesRaw) : {};
+        
+        const lastUsedTimestamp = usedCodes[code]?.[userId];
+
+        if (lastUsedTimestamp && (Date.now() - lastUsedTimestamp < oneDayInMs)) {
+            // Reused within 24 hours
+            return {
+                status: 'reused',
+                resetTimestamp: lastUsedTimestamp + oneDayInMs
+            };
+        }
+
+        // Fresh use or cooldown expired
+        if (!usedCodes[code]) {
+            usedCodes[code] = {};
+        }
+        usedCodes[code][userId] = Date.now();
+        localStorage.setItem('abmut_used_codes', JSON.stringify(usedCodes));
+        
+        const GRACE_PERIOD_MS = 2 * 60 * 1000; // 2 minutes grace period
+        const durationMs = codeDetails.durationMinutes === -1 
+            ? -1 
+            : (codeDetails.durationMinutes * 60 * 1000) + GRACE_PERIOD_MS;
+
+        return {
+            status: 'valid',
+            durationMs: durationMs,
+        };
+
+    } catch (e) {
+        console.error("Error processing used codes from localStorage", e);
+        // This is a developer-facing error, user gets a generic message.
+        return { status: 'invalid', error: 'Terjadi kesalahan internal saat validasi kode.' };
+    }
+};
+
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onShowInfo }) => {
   const [inviteCode, setInviteCode] = useState('');
@@ -36,14 +92,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onShowInfo
 
     // Invite Code Login
     if (trimmedCode) {
-        if (trimmedCode === 'RADINALLSHARE') {
-            setSuccessMessage('Berhasil (Mode Pengembang)');
-            onLoginSuccess('invite', trimmedCode, -1);
-            return;
-        }
-        
+        // This regex provides quick client-side feedback on format
         const validCodeFormatRegex = /^(?:[A-Z0-9]{5}|[A-Z0-9]{7}|[A-Z0-9]{9}|GSAID\d{5})$/;
-        if (!validCodeFormatRegex.test(trimmedCode)) {
+        if (trimmedCode !== 'RADINALLSHARE' && !validCodeFormatRegex.test(trimmedCode)) {
             setError('Format kode invite tidak valid atau salah.');
             setIsLoading(false);
             return;
@@ -56,47 +107,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onShowInfo
             localStorage.setItem('abmut_user_id', userId);
         }
 
-        // Server-side validation with timeout
+        // Use client-side validation instead of fetch
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 7000); // 7-second timeout
+            const data = await validateInviteCode(trimmedCode, userId);
 
-            const response = await fetch('/api/validate-code', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: trimmedCode, userId: userId }),
-                signal: controller.signal,
-            });
-
-            clearTimeout(timeoutId);
-
-            const data = await response.json();
-
-            if (response.ok && data.status) {
-                 if (data.status === 'valid') {
-                    setSuccessMessage('Berhasil');
-                    onLoginSuccess('invite', trimmedCode, data.durationMs);
-                } else if (data.status === 'reused') {
-                    setSuccessMessage('Sesi uji coba dilanjutkan (terbatas)');
-                    onLoginSuccess('invite', trimmedCode, 0, data.resetTimestamp);
-                } else { // 'invalid' or other errors from backend
-                    setError(data.error || 'Terjadi kesalahan validasi.');
-                    setIsLoading(false);
-                }
-            } else {
-                setError(data.error || 'Kode invite tidak ditemukan atau sudah digunakan.');
+            if (data.status === 'valid') {
+                setSuccessMessage('Berhasil');
+                onLoginSuccess('invite', trimmedCode, data.durationMs);
+            } else if (data.status === 'reused') {
+                setSuccessMessage('Sesi uji coba dilanjutkan (terbatas)');
+                onLoginSuccess('invite', trimmedCode, 0, data.resetTimestamp);
+            } else { // 'invalid'
+                setError(data.error || 'Terjadi kesalahan validasi.');
                 setIsLoading(false);
             }
         } catch (err) {
-            if (err instanceof Error && err.name === 'AbortError') {
-                setError('Server validasi tidak merespons. Coba lagi atau periksa koneksi Anda.');
-            } else {
-                setError('Tidak dapat terhubung ke server validasi. Periksa koneksi internet Anda.');
-            }
+            // This catch is for unexpected errors in the validation function itself
+            setError('Terjadi kesalahan tak terduga. Silakan coba lagi.');
             setIsLoading(false);
         }
     } else {
-        setError(isApiKeyFeatureEnabled ? 'Harap masukkan Kode Invite atau Kunci API Gemini.' : 'Harap masukkan Kode Invite.');
+        setError(isApiKeyFeatureEnabled ? 'Harap masukkan Kode Uji Coba atau Kunci API Gemini.' : 'Harap masukkan Kode Uji Coba.');
         setIsLoading(false);
     }
   };

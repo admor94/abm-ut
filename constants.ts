@@ -1,6 +1,24 @@
 import type { AppView } from './types';
 import { isApiKeyFeatureEnabled } from './featureFlags';
 
+export const INVITE_CODES = [
+  { code: 'ADMOR94', durationMinutes: 90 },
+  { code: 'UTHEBAT', durationMinutes: 20 },
+  { code: 'UTMAJU', durationMinutes: 15 },
+  { code: 'UTCOBA', durationMinutes: 10 },
+  { code: 'GSAID25778', durationMinutes: 30 },
+  { code: 'GSAID25779', durationMinutes: 30 },
+  { code: 'GSAID25780', durationMinutes: 30 },
+  { code: 'GSAID25781', durationMinutes: 30 },
+  { code: 'GSAID25782', durationMinutes: 30 },
+  { code: 'GSAID25783', durationMinutes: 30 },
+  { code: 'GSAID25784', durationMinutes: 30 },
+  { code: 'GSAID25785', durationMinutes: 30 },
+  { code: 'GSAID25786', durationMinutes: 30 },
+  { code: 'GSAID25787', durationMinutes: 30 },
+  { code: 'RADINALLSHARE', durationMinutes: -1 }
+];
+
 export const FACULTIES = [
   "Fakultas Ekonomi dan Bisnis (FEB)",
   "Fakultas Keguruan dan Ilmu Pendidikan (FKIP)",
